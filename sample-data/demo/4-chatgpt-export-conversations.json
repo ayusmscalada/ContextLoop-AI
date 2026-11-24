@@ -1,0 +1,61 @@
+[
+  {
+    "title": "Settlement reconciliation cadence",
+    "create_time": 1795104000,
+    "update_time": 1795104080,
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": [
+          "m0"
+        ]
+      },
+      "m0": {
+        "id": "m0",
+        "parent": "root",
+        "children": [
+          "m1"
+        ],
+        "message": {
+          "id": "m0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1795104040,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "For Project Alpha, should settlement reconciliation against PayFlow run hourly or daily?"
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "m1": {
+        "id": "m1",
+        "parent": "m0",
+        "children": [],
+        "message": {
+          "id": "m1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1795104080,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Run a lightweight hourly reconciliation for anomaly detection and a full daily reconciliation that closes the books in PostgreSQL. Hourly catches webhook gaps quickly; daily gives finance a single authoritative report."
+            ]
+          },
+          "metadata": {
+            "model_slug": "gpt-5"
+          }
+        }
+      }
+    },
+    "current_node": "m1",
+    "conversation_id": "conv-33-2"
+  }
+]

@@ -1,0 +1,11 @@
+services:
+  contextloop:
+    build: .
+    ports: ["8787:8787"]
+    environment:
+      # Optional: enables Claude-powered extraction, answers, skill rewriting and policy compilation
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - contextloop-data:/data
+volumes:
+  contextloop-data:

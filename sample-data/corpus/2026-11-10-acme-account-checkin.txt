@@ -1,0 +1,11 @@
+Meeting: Acme Retail account check-in
+Date: 2026-11-10
+Type: customer call
+Attendees: Carol Diaz, Priya Patel
+Project: Project Alpha
+
+Carol Diaz: Acme Retail wants confirmation that the payment platform is ready for their holiday campaign.
+Priya Patel: The reliability fixes from the October incident are in. Retries, idempotency keys and async processing are live in staging.
+Carol Diaz: They also asked about webhook signature verification for their finance team.
+Priya Patel: Covered, signatures are verified with HMAC. I will send their finance team the integration guide.
+Action item: Carol will schedule a technical review with Acme Retail finance.

@@ -1,0 +1,164 @@
+[
+  {
+    "title": "Backoff vs circuit breaker for payment APIs",
+    "create_time": 1791397200,
+    "update_time": 1791397360,
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": [
+          "m0"
+        ]
+      },
+      "m0": {
+        "id": "m0",
+        "parent": "root",
+        "children": [
+          "m1"
+        ],
+        "message": {
+          "id": "m0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1791397240,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "For Project Alpha we call the PayFlow API for every charge. When it gets slow under high traffic, should we use exponential backoff or a circuit breaker?"
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "m1": {
+        "id": "m1",
+        "parent": "m0",
+        "children": [
+          "m2"
+        ],
+        "message": {
+          "id": "m1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1791397280,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Use both, for different jobs. Exponential backoff with jitter and a retry limit handles transient failures like timeouts and 503s. A circuit breaker stops hammering a provider that is clearly down. For payments, the critical piece is an idempotency key on every charge so a retry after a timeout cannot double-charge a customer."
+            ]
+          },
+          "metadata": {
+            "model_slug": "gpt-5"
+          }
+        }
+      },
+      "m2": {
+        "id": "m2",
+        "parent": "m1",
+        "children": [
+          "m3"
+        ],
+        "message": {
+          "id": "m2",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1791397320,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "What timeout should we use if our p99 checkout budget is 800 ms?"
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "m3": {
+        "id": "m3",
+        "parent": "m2",
+        "children": [],
+        "message": {
+          "id": "m3",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1791397360,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Keep the per-attempt client timeout well under the budget. Many teams use an 800 ms ceiling for the whole call and move retries off the request path with asynchronous processing on a queue, so checkout returns immediately and a worker retries in the background."
+            ]
+          },
+          "metadata": {
+            "model_slug": "gpt-5"
+          }
+        }
+      }
+    },
+    "current_node": "m3",
+    "conversation_id": "conv-43-4"
+  },
+  {
+    "title": "Postgres advisory locks for migrations",
+    "create_time": 1793271900,
+    "update_time": 1793271980,
+    "mapping": {
+      "root": {
+        "id": "root",
+        "message": null,
+        "parent": null,
+        "children": [
+          "m0"
+        ]
+      },
+      "m0": {
+        "id": "m0",
+        "parent": "root",
+        "children": [
+          "m1"
+        ],
+        "message": {
+          "id": "m0",
+          "author": {
+            "role": "user"
+          },
+          "create_time": 1793271940,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Our agent-run migrations keep blocking writes on the orders table. Ideas?"
+            ]
+          },
+          "metadata": {}
+        }
+      },
+      "m1": {
+        "id": "m1",
+        "parent": "m0",
+        "children": [],
+        "message": {
+          "id": "m1",
+          "author": {
+            "role": "assistant"
+          },
+          "create_time": 1793271980,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Set lock_timeout so ALTER TABLE fails fast instead of queueing behind long transactions, use CREATE INDEX CONCURRENTLY, and backfill new columns in batches. Advisory locks can serialize migrations across workers."
+            ]
+          },
+          "metadata": {
+            "model_slug": "gpt-5"
+          }
+        }
+      }
+    },
+    "current_node": "m1",
+    "conversation_id": "conv-38-2"
+  }
+]

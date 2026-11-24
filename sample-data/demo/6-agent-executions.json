@@ -1,0 +1,109 @@
+{
+  "executions": [
+    {
+      "agent": "payments-agent",
+      "harness": "codex",
+      "skill": "api-integration",
+      "task": "Refund order #49110 via PayFlow API",
+      "status": "failure",
+      "error_type": "timeout",
+      "error_message": "Agent exceeded 2500ms task deadline waiting on PayFlow API (no client timeout configured)",
+      "tokens_in": 3100,
+      "tokens_out": 640,
+      "latency_ms": 2503,
+      "started_at": "2026-11-21T01:15:00Z",
+      "project": "Project Alpha",
+      "fault": {
+        "scenario": "latency_spike",
+        "recoverAfter": 1
+      },
+      "steps": [
+        {
+          "type": "plan",
+          "name": "skill_policy"
+        },
+        {
+          "type": "tool_call",
+          "name": "http.post /v1/refunds",
+          "status": "error",
+          "latency_ms": 2500
+        },
+        {
+          "type": "result",
+          "name": "failure",
+          "status": "error"
+        }
+      ]
+    },
+    {
+      "agent": "payments-agent",
+      "harness": "codex",
+      "skill": "api-integration",
+      "task": "Refund order #49210 via PayFlow API",
+      "status": "failure",
+      "error_type": "timeout",
+      "error_message": "Agent exceeded 2500ms task deadline waiting on PayFlow API (no client timeout configured)",
+      "tokens_in": 3100,
+      "tokens_out": 640,
+      "latency_ms": 2506,
+      "started_at": "2026-11-22T02:15:00Z",
+      "project": "Project Alpha",
+      "fault": {
+        "scenario": "latency_spike",
+        "recoverAfter": 1
+      },
+      "steps": [
+        {
+          "type": "plan",
+          "name": "skill_policy"
+        },
+        {
+          "type": "tool_call",
+          "name": "http.post /v1/refunds",
+          "status": "error",
+          "latency_ms": 2500
+        },
+        {
+          "type": "result",
+          "name": "failure",
+          "status": "error"
+        }
+      ]
+    },
+    {
+      "agent": "payments-agent",
+      "harness": "codex",
+      "skill": "api-integration",
+      "task": "Refund order #49310 via PayFlow API",
+      "status": "failure",
+      "error_type": "timeout",
+      "error_message": "Agent exceeded 2500ms task deadline waiting on PayFlow API (no client timeout configured)",
+      "tokens_in": 3100,
+      "tokens_out": 640,
+      "latency_ms": 2509,
+      "started_at": "2026-11-23T03:15:00Z",
+      "project": "Project Alpha",
+      "fault": {
+        "scenario": "latency_spike",
+        "recoverAfter": 1
+      },
+      "steps": [
+        {
+          "type": "plan",
+          "name": "skill_policy"
+        },
+        {
+          "type": "tool_call",
+          "name": "http.post /v1/refunds",
+          "status": "error",
+          "latency_ms": 2500
+        },
+        {
+          "type": "result",
+          "name": "failure",
+          "status": "error"
+        }
+      ]
+    }
+  ]
+}

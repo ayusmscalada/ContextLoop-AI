@@ -1,0 +1,11 @@
+Meeting: Project Beacon weekly sync
+Date: 2026-11-12
+Type: planning
+Attendees: Ben Okafor, Priya Patel, Sam Rivera
+Project: Project Beacon
+
+Ben Okafor: The GraphQL gateway is done, but the wallet tokenization work depends on the PayFlow certification that also slipped for Alpha.
+Priya Patel: Then let us be honest with Globex. The Project Beacon beta release moved to February 3, 2027.
+Sam Rivera: That also gives us time to finish the offline sync.
+Ben Okafor: Project Beacon is at risk until certification lands.
+Action item: Priya will tell Globex Logistics about the new Beacon beta date.

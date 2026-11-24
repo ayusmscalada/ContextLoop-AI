@@ -1,0 +1,13 @@
+Meeting: Project Alpha planning
+Date: 2026-10-02
+Type: planning
+Attendees: Priya Patel, Maya Chen, Ben Okafor, Carol Diaz
+Project: Project Alpha
+
+Priya Patel: Goal for today is to lock the launch plan with Acme Retail.
+Maya Chen: Ledger and checkout API are on track. PayFlow sandbox certification is the long pole.
+Priya Patel: Then the Project Alpha launch is November 15, 2026. Carol, you can share that date with Acme Retail.
+Carol Diaz: Great, Acme Retail wants to run their holiday campaign on the new platform.
+Ben Okafor: I'll make sure the charge service load test happens before then.
+Action item: Carol will confirm the November 15 launch with Acme Retail.
+Action item: Ben will run the peak-traffic load rehearsal.

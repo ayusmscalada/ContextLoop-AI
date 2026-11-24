@@ -1,0 +1,13 @@
+Meeting: Project Alpha sprint review
+Date: 2026-10-20
+Type: planning
+Attendees: Priya Patel, Maya Chen, Alice Morgan
+Project: Project Alpha
+
+Maya Chen: The retry and idempotency work from the incident review is done, but PayFlow moved our production certification window by three weeks.
+Alice Morgan: Can we launch without certification?
+Maya Chen: No, PayFlow will not enable live charges until we pass it.
+Priya Patel: Then the date changes. The Project Alpha launch moved to December 6, 2026. I will tell Acme Retail today.
+Alice Morgan: Agreed. Priya owns the customer communication.
+Project Alpha is at risk until certification is complete.
+Action item: Priya will send Acme Retail the revised launch date.

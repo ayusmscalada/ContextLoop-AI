@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "contextloop": {
+      "command": "npx",
+      "args": ["tsx", "server/src/mcp.ts"],
+      "env": {
+        "CONTEXTLOOP_URL": "http://localhost:8787",
+        "CONTEXTLOOP_API_KEY": "clk_demo_ben_claude"
+      }
+    }
+  }
+}

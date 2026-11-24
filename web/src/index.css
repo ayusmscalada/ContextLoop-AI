@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/* ---------- Design tokens (light) ---------- */
+:root {
+  color-scheme: light;
+  --bg: #f6f6f3;
+  --surface: #fcfcfb;
+  --surface-2: #f1f0ec;
+  --sidebar: #15141a;
+  --sidebar-2: #222129;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: rgba(11, 11, 11, 0.18);
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --accent: #6250d6;
+  --accent-soft: #ecebfb;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  /* categorical series — fixed order, validated reference palette */
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+  /* status — reserved, always paired with icon + label */
+  --good: #0ca30c; --good-ink: #006300; --good-soft: #e7f6e7;
+  --warning: #fab219; --warning-ink: #8a5a00; --warning-soft: #fff4dc;
+  --serious: #ec835a; --serious-soft: #fdeee7;
+  --critical: #d03b3b; --critical-soft: #fbe9e9;
+  --code-bg: #f3f2ee;
+}
+
+/* ---------- Dark (selected steps, not an automatic flip) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0d0d0d; --surface: #1a1a19; --surface-2: #232321; --sidebar: #0a0a0c; --sidebar-2: #18171d;
+    --border: rgba(255, 255, 255, 0.1); --border-strong: rgba(255, 255, 255, 0.18);
+    --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781; --accent: #9085e9; --accent-soft: #26233f;
+    --grid: #2c2c2a; --axis: #383835;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c; --s7: #9085e9; --s8: #e66767;
+    --good-ink: #0ca30c; --good-soft: #13261a; --warning-ink: #fab219; --warning-soft: #2b2310; --serious-soft: #2d1c15; --critical-soft: #2d1616;
+    --code-bg: #121211;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d0d0d; --surface: #1a1a19; --surface-2: #232321; --sidebar: #0a0a0c; --sidebar-2: #18171d;
+  --border: rgba(255, 255, 255, 0.1); --border-strong: rgba(255, 255, 255, 0.18);
+  --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781; --accent: #9085e9; --accent-soft: #26233f;
+  --grid: #2c2c2a; --axis: #383835;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #0ca30c; --s7: #9085e9; --s8: #e66767;
+  --good-ink: #0ca30c; --good-soft: #13261a; --warning-ink: #fab219; --warning-soft: #2b2310; --serious-soft: #2d1c15; --critical-soft: #2d1616;
+  --code-bg: #121211;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-2: var(--sidebar-2);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-good-soft: var(--good-soft);
+  --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
+  --color-warning-soft: var(--warning-soft);
+  --color-serious: var(--serious);
+  --color-serious-soft: var(--serious-soft);
+  --color-critical: var(--critical);
+  --color-critical-soft: var(--critical-soft);
+  --color-code: var(--code-bg);
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, monospace;
+}
+
+html, body, #root { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* recharts chrome */
+.recharts-cartesian-grid line { stroke: var(--grid); }
+.recharts-cartesian-axis-line, .recharts-cartesian-axis-tick-line { stroke: var(--axis); }
+.recharts-text { fill: var(--muted); font-size: 11px; }
+.recharts-legend-item-text { color: var(--ink-2) !important; font-size: 12px; }
+
+/* markdown answers */
+.md p { margin: 0.35rem 0; }
+.md ul { margin: 0.3rem 0 0.5rem 1.1rem; list-style: disc; }
+.md li { margin: 0.15rem 0; }
+.md strong { font-weight: 600; }
+.md code { background: var(--code-bg); padding: 0 4px; border-radius: 4px; font-size: 0.85em; }

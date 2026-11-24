@@ -1,0 +1,18 @@
+Meeting: Engineering meeting #018 - Project Alpha payment incident review
+Date: 2026-10-08
+Type: Incident review / architecture decision
+Attendees: Maya Chen, Ben Okafor, Priya Patel, Alice Morgan
+Project: Project Alpha
+
+Maya Chen: Quick recap of Tuesday. During the peak-traffic load rehearsal for Acme Retail, the Project Alpha payment integration failed for about forty minutes.
+Ben Okafor: Root cause is that the PayFlow API exceeded its timeout limit during high traffic. Our charge service had no client timeout, so requests hung until the worker was killed, and we never retried.
+Priya Patel: How many customers would that have hit in production?
+Ben Okafor: Roughly 12 percent of checkout attempts in the rehearsal window. Some of the slow requests actually committed on the PayFlow side, so a naive retry would have double-charged people.
+Alice Morgan: So retries alone are dangerous. What is the proposal?
+Maya Chen: Three parts. First, exponential backoff with a retry limit of three attempts, only for transient errors like timeouts, 503s and 429s. Second, every charge carries an idempotency key so a retry can never create a duplicate charge. Third, move charge submission to asynchronous processing on a Redis queue with a worker, so checkout returns immediately.
+Alice Morgan: Agreed. Decision: we adopt exponential backoff with retry limits, idempotency keys, and asynchronous processing for all PayFlow API calls.
+Priya Patel: I want the agents doing integration work to follow the same rules. The api-integration skill they use just says send the request and report errors.
+Ben Okafor: I will implement the retry logic in the charge service with Claude Code this week and have Codex write the integration tests.
+Action item: Ben will implement exponential backoff, retry limits and idempotency keys in the charge service.
+Action item: Maya will move charge submission to an async worker on Redis.
+Action item: Priya will update the api-integration skill guidance for agents.
