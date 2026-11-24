@@ -4,8 +4,10 @@
  * normalized view (segments with speakers/tools) used for indexing.
  */
 import path from "node:path";
+import { emailsToDocs, looksLikeEml, looksLikeMbox, parseEmailMessage, splitMbox } from "./email.js";
+import { githubToDocs, looksLikeGitHub } from "./github.js";
 
-export type SourceKind = "chatgpt" | "claude_code" | "codex" | "meeting" | "document" | "agent_trace";
+export type SourceKind = "chatgpt" | "claude_code" | "codex" | "meeting" | "document" | "agent_trace" | "email" | "github";
 
 export interface Segment {
   speaker?: string;
@@ -361,6 +363,15 @@ export async function parseFile(buf: Buffer, filename: string, hint?: SourceKind
   }
   const text = buf.toString("utf8").replace(/^﻿/, "");
 
+  // Email (Gmail / Outlook exports). Checked before transcripts: header lines look like speakers.
+  if (ext === ".mbox" || (hint === "email" && looksLikeMbox(text)) || looksLikeMbox(text)) {
+    const raw = buf.toString("latin1"); // byte-exact; each MIME part is decoded with its own charset
+    return { docs: emailsToDocs(splitMbox(raw).map(parseEmailMessage), "email-mbox"), detected: "email-mbox" };
+  }
+  if (ext === ".eml" || hint === "email" || looksLikeEml(text)) {
+    return { docs: emailsToDocs([parseEmailMessage(buf.toString("latin1"))], "email-eml"), detected: "email-eml" };
+  }
+
   if (ext === ".jsonl" || ext === ".ndjson" || (!text.trim().startsWith("[") && text.trim().startsWith("{") && text.includes("\n{"))) {
     const lines = parseJsonl(text);
     if (lines) {
@@ -376,6 +387,10 @@ export async function parseFile(buf: Buffer, filename: string, hint?: SourceKind
       const data = JSON.parse(text);
       if (Array.isArray(data) && data.some((c) => c?.mapping)) return { docs: parseChatGPT(data), detected: "chatgpt-export" };
       if (data?.mapping) return { docs: parseChatGPT([data]), detected: "chatgpt-export" };
+      if (hint === "github" || looksLikeGitHub(data)) {
+        const docs = githubToDocs(data);
+        if (docs.length) return { docs, detected: docs[0].metadata.format };
+      }
       const traces = Array.isArray(data) ? data : data?.executions ?? (data?.task && data?.status ? [data] : null);
       if (Array.isArray(traces) && traces.length && traces.every((t: any) => t?.task && t?.status)) return { docs: [parseTraces(traces, filename)], detected: "agent-trace-json" };
       return { docs: [parseDocument(JSON.stringify(data, null, 2), filename, "application/json")], detected: "json-document" };

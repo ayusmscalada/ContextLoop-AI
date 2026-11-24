@@ -148,4 +148,183 @@ fs.writeFileSync(path.join(demo, "6-agent-executions.json"), JSON.stringify({
   })),
 }, null, 2));
 
+// ================= EMAIL (Gmail Takeout mbox + Outlook .eml) =================
+const crlf = (s: string) => s.replace(/\r?\n/g, "\r\n");
+const qp = (s: string) => s.replace(/[^\x20-\x7e\r\n]/g, (ch) => [...Buffer.from(ch)].map((b) => "=" + b.toString(16).toUpperCase().padStart(2, "0")).join("")).replace(/(.{70})/g, "$1=\r\n");
+fs.writeFileSync(path.join(corpus, "gmail-takeout-acme-holiday-campaign.mbox"), crlf(`From 1817263540123456789@xxx Tue Nov 03 15:12:00 +0000 2026
+X-GM-THRID: 1817263540123456789
+X-Gmail-Labels: Inbox,Customers/Acme
+Delivered-To: carol@northwind.example
+Message-ID: <CAacme-001@mail.gmail.com>
+Date: Tue, 3 Nov 2026 15:12:00 +0000
+From: Dana Whitfield <dana@acmeretail.example>
+To: Carol Diaz <carol@northwind.example>
+Subject: Holiday campaign readiness - payment platform
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hi Carol,
+
+Our holiday campaign is the biggest week of the year for Acme Retail. Before =
+we route checkout through the new Northwind payment platform we need two thi=
+ngs from your team:
+
+1. Confirmation that the October timeout incident is fully fixed =E2=80=94 we can=
+not afford duplicate charges during peak traffic.
+2. Details on how PayFlow webhook signatures are verified, for our finance tea=
+m's audit.
+
+Thanks,
+Dana Whitfield
+Head of Digital Commerce, Acme Retail
+
+From 1817263540123456790@xxx Wed Nov 04 09:40:00 +0000 2026
+X-GM-THRID: 1817263540123456789
+X-Gmail-Labels: Sent,Customers/Acme
+Message-ID: <CAnw-002@mail.gmail.com>
+In-Reply-To: <CAacme-001@mail.gmail.com>
+References: <CAacme-001@mail.gmail.com>
+Date: Wed, 4 Nov 2026 09:40:00 +0000
+From: Carol Diaz <carol@northwind.example>
+To: Dana Whitfield <dana@acmeretail.example>
+Cc: Priya Patel <priya@northwind.example>
+Subject: Re: Holiday campaign readiness - payment platform
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+
+Hi Dana,
+
+Adding Priya Patel, who owns Project Alpha, so she can answer the technical points directly.
+
+Best,
+Carol
+
+On Tue, Nov 3, 2026 at 3:12 PM Dana Whitfield <dana@acmeretail.example> wrote:
+> Hi Carol,
+> Our holiday campaign is the biggest week of the year for Acme Retail.
+
+From 1817263540123456791@xxx Wed Nov 04 16:05:00 +0000 2026
+X-GM-THRID: 1817263540123456789
+X-Gmail-Labels: Sent,Customers/Acme
+Message-ID: <CAnw-003@mail.gmail.com>
+In-Reply-To: <CAnw-002@mail.gmail.com>
+References: <CAacme-001@mail.gmail.com> <CAnw-002@mail.gmail.com>
+Date: Wed, 4 Nov 2026 16:05:00 +0000
+From: Priya Patel <priya@northwind.example>
+To: Dana Whitfield <dana@acmeretail.example>
+Cc: Carol Diaz <carol@northwind.example>
+Subject: Re: Holiday campaign readiness - payment platform
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1_nw"
+
+--b1_nw
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: base64
+
+${Buffer.from(`<div>Hi Dana,</div><p>Both points are covered. The timeout incident was fixed in pull request #142: the PayFlow client now uses an 800 ms timeout, exponential backoff with retry limits, and an idempotency key on every charge, so a retry can never create a duplicate charge.</p><p>Webhook signatures are verified with HMAC over the raw request body. We agreed to walk your finance team through it in a technical review; Carol will send the invite.</p><p>Priya Patel<br>Product Manager, Project Alpha</p><blockquote>On Wed, Nov 4, Carol Diaz wrote: Adding Priya</blockquote>`).toString("base64").replace(/(.{76})/g, "$1\n")}
+--b1_nw--
+`));
+
+fs.writeFileSync(path.join(demo, "7-outlook-email-acme-certification.eml"), crlf(`Received: from AM9PR01MB1234.eurprd01.prod.exchangelabs.com
+Thread-Topic: PayFlow certification status for Acme Retail
+Thread-Index: AdlXq1vC8kR2Zt7nQyq4n0x1Yw==
+X-MS-Exchange-Organization-AuthAs: Internal
+X-Mailer: Microsoft Outlook 16.0
+Message-ID: <AM9PR01MB1234ACME@eurprd01.prod.outlook.com>
+Date: Thu, 19 Nov 2026 14:20:00 +0000
+From: "Whitfield, Dana" <dana@acmeretail.example>
+To: Priya Patel <priya@northwind.example>
+Cc: Carol Diaz <carol@northwind.example>
+Subject: PayFlow certification status for Acme Retail
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="_000_outlook_"
+
+--_000_outlook_
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+${qp(`Hi Priya,
+
+Thanks for the technical review — our finance team signed off on the webhook signature approach.
+
+The remaining blocker on our side is the PayFlow production certification for Project Alpha. Our CFO asked for written confirmation once certification passes, because the holiday campaign budget is released only after that.
+
+Could you also share the runbook for settlement reconciliation? We want to align our daily close with your hourly reconciliation job.
+
+Best regards,
+Dana Whitfield
+Head of Digital Commerce | Acme Retail`)}
+
+________________________________
+From: Priya Patel <priya@northwind.example>
+Sent: Wednesday, November 4, 2026 4:05 PM
+Subject: Re: Holiday campaign readiness - payment platform
+
+Both points are covered.
+
+--_000_outlook_
+Content-Type: text/html; charset="utf-8"
+
+<html><body><p>Hi Priya,</p><p>(HTML part omitted for brevity)</p></body></html>
+--_000_outlook_--
+`));
+
+// ================= GITHUB (gh CLI JSON + webhook payloads) =================
+fs.writeFileSync(path.join(corpus, "github-pr-142-payflow-retry.json"), JSON.stringify({
+  number: 142,
+  title: "Add exponential backoff, retry limits and idempotency keys to PayFlow client",
+  url: "https://github.com/northwind-labs/charge-service/pull/142",
+  state: "MERGED",
+  author: { login: "bokafor", name: "Ben Okafor" },
+  createdAt: "2026-10-09T18:30:00Z",
+  mergedAt: "2026-10-11T10:05:00Z",
+  mergedBy: { login: "mchen", name: "Maya Chen" },
+  headRefName: "fix/payflow-timeouts",
+  baseRefName: "main",
+  additions: 214, deletions: 37, changedFiles: 6,
+  labels: [{ name: "reliability" }, { name: "project-alpha" }],
+  files: [{ path: "src/payflow/client.py" }, { path: "src/payflow/retry.py" }, { path: "tests/payflow/test_retry_integration.py" }],
+  body: "Fixes the Project Alpha payment integration failures from the peak-traffic rehearsal (see engineering meeting #018).\n\nRoot cause: the PayFlow API exceeded its timeout under high traffic and our client had no timeout, no retry and no idempotency key.\n\nChanges:\n- 800 ms client timeout on every PayFlow request\n- Retry transient errors (timeouts, 503, 429) up to 3 times with exponential backoff and jitter; never retry 4xx\n- Honor Retry-After on 429\n- Idempotency-Key per order, reused across retries, so a retry cannot double-charge\n\nImplemented with Claude Code (session #024); integration tests written with Codex (execution #042).",
+  reviews: [
+    { author: { login: "mchen", name: "Maya Chen" }, state: "APPROVED", submittedAt: "2026-10-10T16:00:00Z", body: "Looks good. Agreed that idempotency keys are mandatory for every charge going forward; the commit-then-hang test is exactly the case we were worried about." },
+    { author: { login: "amorgan", name: "Alice Morgan" }, state: "APPROVED", submittedAt: "2026-10-11T09:30:00Z", body: "Approved. This should become the standard for every external API call." },
+  ],
+  comments: [{ author: { login: "ppatel", name: "Priya Patel" }, createdAt: "2026-10-10T11:12:00Z", body: "Thanks Ben. I will mirror these rules in the api-integration skill so the agents follow them too." }],
+}, null, 2));
+
+fs.writeFileSync(path.join(corpus, "github-push-charge-service.json"), JSON.stringify({
+  ref: "refs/heads/main",
+  before: "4f1c2a9d0b7e6f5a4c3b2a1908f7e6d5c4b3a291",
+  after: "9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b",
+  compare: "https://github.com/northwind-labs/charge-service/compare/4f1c2a9d0b7e...9a8b7c6d5e4f",
+  repository: { full_name: "northwind-labs/charge-service" },
+  pusher: { name: "mchen" },
+  sender: { login: "mchen" },
+  commits: [
+    { id: "1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c", timestamp: "2026-10-13T09:10:00Z", author: { name: "Maya Chen", username: "mchen" }, message: "Move charge submission to async worker on Redis queue\n\nCheckout now returns immediately; the worker retries PayFlow with the idempotency key.", added: ["src/workers/charge_worker.py"], modified: ["src/charges/service.py"], removed: [] },
+    { id: "2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d", timestamp: "2026-10-13T11:45:00Z", author: { name: "Maya Chen", username: "mchen" }, message: "Add Grafana dashboard for PayFlow latency and retry counts", added: ["ops/dashboards/payflow.json"], modified: [], removed: [] },
+  ],
+  head_commit: { timestamp: "2026-10-13T11:45:00Z" },
+}, null, 2));
+
+fs.writeFileSync(path.join(demo, "8-github-webhook-pull_request-merged.json"), JSON.stringify({
+  action: "closed",
+  number: 157,
+  repository: { full_name: "northwind-labs/charge-service" },
+  sender: { login: "mchen" },
+  pull_request: {
+    number: 157,
+    title: "Verify PayFlow webhook signatures on the raw request body",
+    html_url: "https://github.com/northwind-labs/charge-service/pull/157",
+    state: "closed", merged: true, merged_at: "2026-11-18T15:20:00Z", created_at: "2026-11-18T11:02:00Z",
+    user: { login: "mchen", name: "Maya Chen" },
+    merged_by: { login: "bokafor", name: "Ben Okafor" },
+    head: { ref: "feat/webhook-verification" }, base: { ref: "main", repo: { full_name: "northwind-labs/charge-service" } },
+    additions: 88, deletions: 12, changed_files: 3,
+    requested_reviewers: [{ login: "bokafor", name: "Ben Okafor" }],
+    body: "Fixes the webhook signature failures on Project Alpha settlement events.\n\nWe verified against the JSON body re-serialized by FastAPI, which changes byte order. Decision: verify PayFlow webhooks on the raw body with a 5 minute replay window. Acme Retail's finance team reviewed and approved the approach.",
+  },
+}, null, 2));
+
 console.log("Sample data written to", corpus, "and", demo);

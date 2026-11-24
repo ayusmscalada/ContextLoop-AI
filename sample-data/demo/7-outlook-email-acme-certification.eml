@@ -1,0 +1,47 @@
+Received: from AM9PR01MB1234.eurprd01.prod.exchangelabs.com
+Thread-Topic: PayFlow certification status for Acme Retail
+Thread-Index: AdlXq1vC8kR2Zt7nQyq4n0x1Yw==
+X-MS-Exchange-Organization-AuthAs: Internal
+X-Mailer: Microsoft Outlook 16.0
+Message-ID: <AM9PR01MB1234ACME@eurprd01.prod.outlook.com>
+Date: Thu, 19 Nov 2026 14:20:00 +0000
+From: "Whitfield, Dana" <dana@acmeretail.example>
+To: Priya Patel <priya@northwind.example>
+Cc: Carol Diaz <carol@northwind.example>
+Subject: PayFlow certification status for Acme Retail
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="_000_outlook_"
+
+--_000_outlook_
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hi Priya,
+
+Thanks for the technical review =E2=80=94 our finance team signed off =
+on the webhook signature approach.
+
+The remaining blocker on our side is the PayFlow production certificat=
+ion for Project Alpha. Our CFO asked for written confirmation once cer=
+tification passes, because the holiday campaign budget is released onl=
+y after that.
+
+Could you also share the runbook for settlement reconciliation? We wan=
+t to align our daily close with your hourly reconciliation job.
+
+Best regards,
+Dana Whitfield
+Head of Digital Commerce | Acme Retail
+
+________________________________
+From: Priya Patel <priya@northwind.example>
+Sent: Wednesday, November 4, 2026 4:05 PM
+Subject: Re: Holiday campaign readiness - payment platform
+
+Both points are covered.
+
+--_000_outlook_
+Content-Type: text/html; charset="utf-8"
+
+<html><body><p>Hi Priya,</p><p>(HTML part omitted for brevity)</p></body></html>
+--_000_outlook_--

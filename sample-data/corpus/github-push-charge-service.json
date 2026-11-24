@@ -1,0 +1,50 @@
+{
+  "ref": "refs/heads/main",
+  "before": "4f1c2a9d0b7e6f5a4c3b2a1908f7e6d5c4b3a291",
+  "after": "9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b",
+  "compare": "https://github.com/northwind-labs/charge-service/compare/4f1c2a9d0b7e...9a8b7c6d5e4f",
+  "repository": {
+    "full_name": "northwind-labs/charge-service"
+  },
+  "pusher": {
+    "name": "mchen"
+  },
+  "sender": {
+    "login": "mchen"
+  },
+  "commits": [
+    {
+      "id": "1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c",
+      "timestamp": "2026-10-13T09:10:00Z",
+      "author": {
+        "name": "Maya Chen",
+        "username": "mchen"
+      },
+      "message": "Move charge submission to async worker on Redis queue\n\nCheckout now returns immediately; the worker retries PayFlow with the idempotency key.",
+      "added": [
+        "src/workers/charge_worker.py"
+      ],
+      "modified": [
+        "src/charges/service.py"
+      ],
+      "removed": []
+    },
+    {
+      "id": "2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d",
+      "timestamp": "2026-10-13T11:45:00Z",
+      "author": {
+        "name": "Maya Chen",
+        "username": "mchen"
+      },
+      "message": "Add Grafana dashboard for PayFlow latency and retry counts",
+      "added": [
+        "ops/dashboards/payflow.json"
+      ],
+      "modified": [],
+      "removed": []
+    }
+  ],
+  "head_commit": {
+    "timestamp": "2026-10-13T11:45:00Z"
+  }
+}

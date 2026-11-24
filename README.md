@@ -53,7 +53,11 @@ Same structure as a standard Vite + `api/` Vercel project:
 **Deploy:**
 1. Vercel → **Add New → Project** → import the repo. Leave every setting at its default (Root Directory = repo root, Framework = Vite).
 2. **Storage → Create → Blob**, then connect it to the project. This adds `BLOB_READ_WRITE_TOKEN` automatically.
-3. Redeploy. Optionally add `ANTHROPIC_API_KEY` under Environment Variables.
+3. Redeploy. Optional Environment Variables:
+   - `ANTHROPIC_API_KEY`: Claude-powered extraction, answers and skill rewriting
+   - `GITHUB_WEBHOOK_SECRET`: verifies `X-Hub-Signature-256` on `/api/webhooks/github` (use the same secret in the repo's webhook settings)
+   - `GITHUB_TOKEN`: private repos and higher rate limits for repo sync
+   - `EMAIL_INGEST_TOKEN`: protects the inbound email webhook `/api/webhooks/email`
 
 **Persistence** ([server/src/persist.ts](server/src/persist.ts)): all state (ontology, traces, skills, chat, audit, raw uploads) is one SQLite file. On a cold start the function restores the latest snapshot from Vercel Blob into `/tmp`; after every successful write it uploads the snapshot again. The very first boot seeds the demo organization and saves it. Without a Blob store the app still runs, but changes last only as long as the warm instance.
 
@@ -73,7 +77,7 @@ Live-demo files for upload are in [`sample-data/demo/`](sample-data/demo): two m
 
 | Area | What's implemented |
 |---|---|
-| **Ingestion** | Format detection + parsers for ChatGPT `conversations.json` (walks the branch tree, keeps the active thread), Claude Code `.jsonl` (tool calls/results, tokens, cwd, branch), Codex rollout `.jsonl` (function calls, exit codes), WebVTT/speaker transcripts, Markdown/TXT/JSON/PDF, agent-trace JSON. Raw bytes stored content-addressed in the lake first; exact + near-duplicate detection (SHA-256 + 5-shingle Jaccard); automatic metadata; per-import stage tracking. CLI watcher daemon for `~/.claude/projects` / `~/.codex/sessions`. |
+| **Ingestion** | Format detection + parsers for ChatGPT `conversations.json` (walks the branch tree, keeps the active thread), Claude Code `.jsonl` (tool calls/results, tokens, cwd, branch), Codex rollout `.jsonl` (function calls, exit codes), **Gmail/Outlook email** (`.eml`, Takeout `.mbox`; threads reassembled, quoted history stripped; inbound-mail webhook), **GitHub** (signed webhook for pushes, PRs, reviews and comments; `gh`/REST JSON; one-click repo sync; later PR events supersede earlier versions), WebVTT/speaker transcripts, Markdown/TXT/JSON/PDF, agent-trace JSON. Raw bytes stored content-addressed in the lake first; exact + near-duplicate detection (SHA-256 + 5-shingle Jaccard); automatic metadata; per-import stage tracking. CLI watcher daemon for `~/.claude/projects` / `~/.codex/sessions`. |
 | **Ontology** | Typed entities (person, project, customer, technology, issue, decision, task), relations, and **claims with provenance**. Single-valued predicates (deadline, owner, status) are reconciled: agreement → current; disagreement → an open conflict with a scored, explainable proposal (source authority × recency × explicitness, speaker authority). Human review supersedes, never deletes. Full history. Admin-tunable source authority. |
 | **Retrieval** | In-memory hybrid index: BM25 + local 512-d feature-hashing embeddings fused with RRF; filters by project/source/date; permission-filtered *before* ranking. Typical query: 1–5 ms. RAG answers cite every claim; **ontology-first facts** (e.g. "When does Alpha launch?" → reconciled deadline + conflict state); conversation memory resolves follow-ups; related entities. |
 | **Observability** | Traces with step timelines, tool calls, tokens, latency, cost; failure-signature normalization; recurring-failure clustering; repeated-workflow mining (candidate new skills); per-skill/agent/version analytics. |

@@ -42,7 +42,7 @@ function jaccard(a: Set<number>, b: Set<number>) {
 export interface IngestResult {
   importId: string;
   detected: string;
-  documents: { id: string; title: string; sourceKind: string; duplicateOf?: string; similarity?: number; chunks: number; extraction?: ExtractionStats; traces?: number }[];
+  documents: { id: string; title: string; sourceKind: string; duplicateOf?: string; similarity?: number; chunks: number; extraction?: ExtractionStats; traces?: number; superseded?: number }[];
 }
 
 export async function ingestBuffer(buf: Buffer, p: Principal, o: IngestOptions): Promise<IngestResult> {
@@ -68,7 +68,10 @@ export async function ingestBuffer(buf: Buffer, p: Principal, o: IngestOptions):
       const exact = get("SELECT id FROM documents WHERE content_hash = ? AND duplicate_of IS NULL", contentHash);
       let duplicateOf: string | undefined = exact?.id;
       let similarity: number | undefined = exact ? 1 : undefined;
-      if (!duplicateOf && text.length > 400) {
+      // Versioned sources (a PR that later merges, an email thread with new replies) carry an
+      // external_id: the new version supersedes the old one instead of being flagged a near-duplicate.
+      const externalId: string | undefined = pd.metadata.external_id;
+      if (!duplicateOf && !externalId && text.length > 400) {
         const sh = shingles(text);
         for (const d of all("SELECT id, text FROM documents WHERE source_kind = ? AND duplicate_of IS NULL", pd.sourceKind)) {
           const j = jaccard(sh, shingles(d.text));
@@ -102,7 +105,11 @@ export async function ingestBuffer(buf: Buffer, p: Principal, o: IngestOptions):
         stage("recording agent traces");
         for (const t of pd.traces) { recordTrace(t as TraceInput, { origin: o.origin ?? "import", userId: p.user.id }); traceCount++; }
       }
-      result.documents.push({ id: docId, title: pd.title, sourceKind: pd.sourceKind, chunks: chunks.length, extraction, traces: traceCount || undefined });
+      let superseded = 0;
+      if (externalId) {
+        superseded = Number(run("UPDATE documents SET duplicate_of = ? WHERE id != ? AND duplicate_of IS NULL AND json_extract(metadata, '$.external_id') = ?", docId, docId, externalId).changes);
+      }
+      result.documents.push({ id: docId, title: pd.title, sourceKind: pd.sourceKind, chunks: chunks.length, extraction, traces: traceCount || undefined, superseded: superseded || undefined });
     }
     invalidateVisibility();
     const stats = {

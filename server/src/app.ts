@@ -4,7 +4,9 @@ import { Hono, type Context } from "hono";
 import { all, DATA_DIR, get, getRaw, getSetting, json, now, resetDatabase, ROOT, run, setSetting, type Row } from "./db.js";
 import { persistenceInfo } from "./persist.js";
 import { audit, can, canReadDoc, Forbidden, invalidateVisibility, requirePermission, resolvePrincipal, visibleDocIds, type Principal } from "./auth.js";
+import crypto from "node:crypto";
 import { ingestBuffer, listImports } from "./ingest/pipeline.js";
+import { fetchGitHubRepo } from "./ingest/github.js";
 import type { SourceKind } from "./ingest/parsers.js";
 import { answer, buildIndex, indexStats, search, threadMessages } from "./engine/search.js";
 import { ensureDefaultAuthority, resolveConflict } from "./engine/ontology.js";
@@ -23,7 +25,8 @@ app.onError((err, c) => {
 });
 
 app.use("/api/*", async (c, next) => {
-  if (c.req.path === "/api/health") return next();
+  // Health and inbound webhooks authenticate themselves (HMAC signature / shared token), not as a user.
+  if (c.req.path === "/api/health" || c.req.path.startsWith("/api/webhooks/")) return next();
   const p = resolvePrincipal({ authorization: c.req.header("authorization"), userId: c.req.header("x-user-id") });
   if (!p) return c.json({ error: "Invalid or revoked credentials" }, 401);
   c.set("p", p);
@@ -124,6 +127,85 @@ app.post("/api/import", async (c) => {
 });
 
 app.get("/api/imports", (c) => c.json(listImports(100)));
+
+// ---------------- live connectors: GitHub + email ----------------
+/** Integrations ingest on behalf of a configured owner, attributed to the integration in the audit log. */
+function integrationPrincipal(name: string, ownerId?: string): Principal {
+  const base = resolvePrincipal({ userId: ownerId ?? process.env.CONTEXTLOOP_INTEGRATION_USER ?? "u_alice" }) ?? resolvePrincipal({ userId: "u_alice" })!;
+  return { ...base, kind: "agent", agent: { key: `integration:${name}`, name, scopes: ["data:write"], maxVisibility: "private", allowedProjects: null } };
+}
+
+const safeEqual = (a: string, b: string) => {
+  const x = Buffer.from(a), y = Buffer.from(b);
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+};
+
+/** GitHub webhook: push, pull_request, pull_request_review(_comment), issue_comment. */
+app.post("/api/webhooks/github", async (c) => {
+  const raw = Buffer.from(await c.req.arrayBuffer());
+  const event = c.req.header("x-github-event") ?? "unknown";
+  const secret = process.env.GITHUB_WEBHOOK_SECRET?.trim();
+  const sig = c.req.header("x-hub-signature-256") ?? "";
+  const verified = !!secret && safeEqual(sig, `sha256=${crypto.createHmac("sha256", secret).update(raw).digest("hex")}`);
+  if (secret && !verified) {
+    audit(null, "webhook.github", `event:${event}`, "Rejected: invalid X-Hub-Signature-256", "denied");
+    return c.json({ error: "Invalid signature" }, 401);
+  }
+  if (event === "ping") return c.json({ ok: true, pong: true, verified });
+  if (!["push", "pull_request", "pull_request_review", "pull_request_review_comment", "issue_comment"].includes(event) && event !== "unknown") {
+    return c.json({ ok: true, ignored: event });
+  }
+  const q = c.req.query();
+  const p = integrationPrincipal("GitHub webhook", q.owner);
+  const r = await ingestBuffer(raw, p, {
+    filename: `github-${event}-${c.req.header("x-github-delivery") ?? Date.now()}.json`, sourceHint: "github", origin: "webhook",
+    visibility: (q.visibility as any) ?? "team", teamId: q.team ?? "t_engineering", projectId: q.project || null,
+  });
+  return c.json({ ok: true, event, verified, documents: r.documents.map((d) => ({ id: d.id, title: d.title, superseded: d.superseded ?? 0, duplicateOf: d.duplicateOf })) });
+});
+
+/** Inbound email (Gmail/Outlook forwarding via Cloudflare Email Workers, SendGrid Inbound Parse, …): raw RFC 822. */
+app.post("/api/webhooks/email", async (c) => {
+  const token = process.env.EMAIL_INGEST_TOKEN?.trim();
+  const given = c.req.query("token") ?? c.req.header("x-contextloop-token") ?? "";
+  if (token && !safeEqual(given, token)) {
+    audit(null, "webhook.email", "inbound", "Rejected: invalid token", "denied");
+    return c.json({ error: "Invalid token" }, 401);
+  }
+  const ctype = c.req.header("content-type") ?? "";
+  let raw: Buffer;
+  if (ctype.includes("multipart/form-data")) {
+    const body = await c.req.parseBody();
+    const f = (body.email ?? body.file ?? body.raw) as any;
+    raw = typeof f === "string" ? Buffer.from(f, "latin1") : Buffer.from(await f.arrayBuffer());
+  } else if (ctype.includes("application/json")) {
+    const j = await c.req.json();
+    raw = Buffer.from(String(j.raw ?? j.email ?? ""), "latin1");
+  } else raw = Buffer.from(await c.req.arrayBuffer());
+  if (!raw.length) return c.json({ error: "Empty message" }, 400);
+  const q = c.req.query();
+  const p = integrationPrincipal("Email inbound", q.owner);
+  const r = await ingestBuffer(raw, p, {
+    filename: `inbound-${Date.now()}.eml`, sourceHint: "email", origin: "webhook",
+    visibility: (q.visibility as any) ?? "private", teamId: q.team ?? null, projectId: q.project || null,
+  });
+  return c.json({ ok: true, documents: r.documents.map((d) => ({ id: d.id, title: d.title, superseded: d.superseded ?? 0, duplicateOf: d.duplicateOf })) });
+});
+
+/** Pull recent PRs (+ reviews, comments) and commits for a repository via the GitHub REST API. */
+app.post("/api/sources/github/sync", async (c) => {
+  const p = P(c);
+  requirePermission(p, "data.import", "github-sync");
+  const b = await c.req.json();
+  const repo = String(b.repo ?? "").trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "").replace(/\/$/, "");
+  const { prs, commits, rateRemaining } = await fetchGitHubRepo(repo, { token: process.env.GITHUB_TOKEN?.trim() || undefined, limit: Number(b.limit ?? 10) });
+  const opts = { sourceHint: "github" as const, origin: "github-sync", visibility: b.visibility ?? "team", teamId: b.teamId ?? "t_engineering", projectId: b.projectId || null };
+  const results: any[] = [];
+  if (prs.length) results.push(await ingestBuffer(Buffer.from(JSON.stringify(prs)), p, { ...opts, filename: `github-${repo.replace("/", "_")}-pulls.json` }));
+  if (commits.length) results.push(await ingestBuffer(Buffer.from(JSON.stringify(commits)), p, { ...opts, filename: `github-${repo.replace("/", "_")}-commits.json` }));
+  run("UPDATE sources SET last_sync_at = ?, config = json_set(COALESCE(config, '{}'), '$.repo', ?) WHERE kind = 'github'", now(), repo);
+  return c.json({ repo, pullRequests: prs.length, commits: commits.length, rateRemaining, results });
+});
 
 // ---------------- data lake ----------------
 app.get("/api/documents", (c) => {

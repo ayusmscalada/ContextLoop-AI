@@ -3,7 +3,7 @@
 ```mermaid
 flowchart LR
   subgraph Sources
-    A1[ChatGPT export] --- A2[Claude Code .jsonl] --- A3[Codex rollout] --- A4[Meeting transcripts] --- A5[Docs / PDF] --- A6[Agent traces]
+    A1[ChatGPT export] --- A2[Claude Code .jsonl] --- A3[Codex rollout] --- A4[Meeting transcripts] --- A5[Docs / PDF] --- A6[Agent traces] --- A7[Gmail / Outlook] --- A8[GitHub PRs & pushes]
   end
   W[CLI watcher daemon] --> API
   Sources -->|upload / CLI / MCP| API[REST API + permission layer]
@@ -52,6 +52,8 @@ flowchart LR
 | Agent traces | JSON with `task` + `status` | full step timeline + fault metadata → also written to `traces` |
 | Transcripts | WebVTT or ≥35% `Speaker: text` lines | header metadata (date, type, attendees, project), per-turn speakers |
 | Docs | Markdown/TXT/JSON/PDF (`unpdf`) | frontmatter → metadata, headings |
+| Email | `.eml` (Gmail “Download message”, Outlook “Save as”), `.mbox` (Google Takeout), raw RFC 822 via `POST /api/webhooks/email` | MIME tree (multipart, base64/quoted-printable, charsets, HTML fallback), threads via References/In-Reply-To + normalized subject, quoted replies stripped, senders/recipients → people, attachments listed |
+| GitHub | `push` / `pull_request` / review / comment webhooks (`POST /api/webhooks/github`, HMAC-verified), `gh pr view --json`, REST PRs and commits, repo sync | PR title/body/state/reviews/comments/merge, commits with files; `external_id` so a merged PR supersedes its open version |
 
 `ingest/pipeline.ts`: raw store → parse → **dedupe** (normalized SHA-256 for exact; 5-word-shingle Jaccard ≥ 0.85 for near-duplicates, e.g. re-exports) → chunk (~110 words, speaker-preserving) → extract → index → traces. Each import records its stage and stats. Duplicates are stored as pointers (`duplicate_of`) so the history shows what was blocked.
 

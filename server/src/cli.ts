@@ -50,7 +50,7 @@ async function api<T = any>(p: string, init: RequestInit = {}): Promise<T> {
 }
 
 const expand = (p: string) => (p.startsWith("~") ? path.join(os.homedir(), p.slice(1)) : path.resolve(p));
-const INGESTIBLE = /\.(jsonl|ndjson|json|md|markdown|txt|vtt|pdf)$/i;
+const INGESTIBLE = /\.(jsonl|ndjson|json|md|markdown|txt|vtt|pdf|eml|mbox)$/i;
 
 async function uploadFiles(files: string[], flags: Record<string, string | true>, origin = "cli") {
   const form = new FormData();

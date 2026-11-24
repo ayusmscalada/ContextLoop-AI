@@ -5,8 +5,10 @@ export const SOURCE_META: Record<string, { label: string; short: string; color: 
   meeting: { label: "Meeting", short: "MT", color: "var(--s7)" },
   document: { label: "Document", short: "DOC", color: "var(--s5)" },
   agent_trace: { label: "Agent trace", short: "TR", color: "var(--s4)" },
+  email: { label: "Email", short: "@", color: "var(--s6)" },
+  github: { label: "GitHub", short: "GH", color: "var(--s8)" },
 };
-export const SOURCE_ORDER = ["chatgpt", "claude_code", "codex", "meeting", "document", "agent_trace"];
+export const SOURCE_ORDER = ["chatgpt", "claude_code", "codex", "meeting", "document", "agent_trace", "email", "github"];
 
 /** Entity types → fixed categorical slots (color follows the entity type, never rank). */
 export const ENTITY_META: Record<string, { label: string; color: string }> = {

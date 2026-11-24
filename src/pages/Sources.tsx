@@ -5,7 +5,7 @@ import { getUserId, useApi } from "../lib/api";
 import { SOURCE_META, ago, bytes, dateTime } from "../lib/format";
 import { Badge, Button, Callout, Card, CardTitle, ErrorBox, PageHeader, Select, SourceBadge, Spinner, StatusBadge, Table, Td, cx } from "../components/ui";
 
-const ACCEPT = ".json,.jsonl,.ndjson,.txt,.md,.vtt,.pdf";
+const ACCEPT = ".json,.jsonl,.ndjson,.txt,.md,.vtt,.pdf,.eml,.mbox";
 
 export default function Sources() {
   const { data, error, loading, reload } = useApi<any>("/sources");
@@ -84,7 +84,7 @@ export default function Sources() {
       <div className="mb-6 grid gap-4 lg:grid-cols-5">
         {/* Upload */}
         <Card className="lg:col-span-3">
-          <CardTitle sub="ChatGPT exports, Claude Code / Codex session logs, agent traces, meeting transcripts, Markdown, JSON, TXT, PDF. Format is auto-detected.">Import data</CardTitle>
+          <CardTitle sub="ChatGPT exports, Claude Code / Codex session logs, agent traces, meeting transcripts, Gmail / Outlook email (.eml, .mbox), GitHub PR / push JSON, Markdown, TXT, PDF. Format is auto-detected.">Import data</CardTitle>
           <div
             onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
             onDragLeave={() => setDrag(false)}
@@ -140,6 +140,8 @@ export default function Sources() {
                 <option value="codex">Codex</option>
                 <option value="meeting">Meeting</option>
                 <option value="document">Document</option>
+                <option value="email">Email (Gmail / Outlook)</option>
+                <option value="github">GitHub</option>
               </Select>
             </Field>
           </div>
@@ -158,7 +160,7 @@ export default function Sources() {
           <div className="space-y-4 text-sm text-ink-2">
             <div>
               <div className="mb-1 flex items-center gap-1.5 font-medium text-ink"><FileUp className="size-4" />Sample files for the demo</div>
-              <p className="text-xs">Ready-made exports live in <code className="rounded bg-code px-1 font-mono">sample-data/demo</code>: two Project Alpha meetings with conflicting deadlines, a Claude Code session, a ChatGPT export, a Codex rollout and agent traces.</p>
+              <p className="text-xs">Ready-made exports live in <code className="rounded bg-code px-1 font-mono">sample-data/demo</code>: two Project Alpha meetings with conflicting deadlines, a Claude Code session, a ChatGPT export, a Codex rollout, agent traces, an Outlook email and a GitHub pull-request webhook payload.</p>
             </div>
             <div>
               <div className="mb-1 flex items-center gap-1.5 font-medium text-ink"><FolderSync className="size-4" />Background watcher daemon</div>
@@ -173,6 +175,8 @@ export default function Sources() {
           </div>
         </Card>
       </div>
+
+      <LiveConnectors onSynced={(r) => { setResults(r); reload(); }} />
 
       {results && <ImportResults results={results} onClose={() => setResults(null)} />}
 
@@ -236,6 +240,7 @@ function ImportResults({ results, onClose }: { results: any[]; onClose: () => vo
                           <Link to="/graph?tab=conflicts"><Badge tone="warning"><AlertTriangle className="size-3" />{d.extraction.conflicts.length} conflict detected →</Badge></Link>
                         )}
                         {d.traces > 0 && <Badge tone="accent">{d.traces} traces recorded</Badge>}
+                        {d.superseded > 0 && <Badge tone="accent">replaces previous version</Badge>}
                         {d.extraction?.llm && <Badge tone="accent">Claude extraction</Badge>}
                       </span>
                     )}
@@ -265,5 +270,76 @@ function CopyLine({ text }: { text: string }) {
       <span className="flex-1 truncate">{text}</span>
       {ok ? <CheckCircle2 className="size-3 text-good-ink" /> : <Copy className="size-3 text-muted" />}
     </button>
+  );
+}
+
+/** GitHub repo sync + webhook endpoints for GitHub and inbound email. */
+function LiveConnectors({ onSynced }: { onSynced: (results: any[]) => void }) {
+  const [repo, setRepo] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const sync = async () => {
+    setBusy(true);
+    setErr(null);
+    setSummary(null);
+    try {
+      const res = await fetch("/api/sources/github/sync", { method: "POST", headers: { "content-type": "application/json", "x-user-id": getUserId() }, body: JSON.stringify({ repo, limit: 10 }) });
+      const r = await res.json();
+      if (!res.ok) throw new Error(r.error ?? "Sync failed");
+      setSummary(`Synced ${r.repo}: ${r.pullRequests} pull requests and ${r.commits} commits${r.rateRemaining ? ` (GitHub API calls left: ${r.rateRemaining})` : ""}.`);
+      onSynced(r.results);
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mb-6 grid gap-4 lg:grid-cols-2">
+      <Card>
+        <CardTitle sub="Pull requests, reviews, comments and pushes. Later events (synchronize, merged) supersede the earlier version of a PR.">GitHub</CardTitle>
+        <div className="text-xs font-medium text-ink">Sync a repository now</div>
+        <div className="mt-1.5 flex gap-2">
+          <input
+            value={repo}
+            onChange={(e) => setRepo(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && repo && sync()}
+            placeholder="owner/repo or https://github.com/owner/repo"
+            className="h-9 min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
+          />
+          <Button variant="primary" busy={busy} disabled={!repo.trim()} onClick={sync}>Sync</Button>
+        </div>
+        <p className="mt-1.5 text-[11px] text-muted">Public repos work without a token. Set <code className="font-mono">GITHUB_TOKEN</code> on the server for private repos and higher rate limits.</p>
+        {summary && <div className="mt-2"><Callout tone="good" icon={<CheckCircle2 className="size-4 text-good-ink" />}>{summary}</Callout></div>}
+        <div className="mt-2"><ErrorBox error={err} /></div>
+        <div className="mt-4 text-xs font-medium text-ink">Live webhook (Repo → Settings → Webhooks)</div>
+        <p className="mb-1.5 text-[11px] text-muted">
+          Content type <code className="font-mono">application/json</code>; events: pushes, pull requests, pull request reviews, issue comments. Set the same secret as <code className="font-mono">GITHUB_WEBHOOK_SECRET</code> so payloads are signature-verified.
+        </p>
+        <CopyLine text={`${origin}/api/webhooks/github?project=prj_alpha`} />
+      </Card>
+      <Card>
+        <CardTitle sub="Threads are reassembled from replies, quoted history is stripped, and senders and recipients become people in the ontology.">Gmail & Outlook</CardTitle>
+        <div className="space-y-3 text-xs text-ink-2">
+          <div>
+            <div className="font-medium text-ink">Import exports</div>
+            <p>
+              Gmail: <span className="text-ink">Google Takeout → Mail</span> gives an <code className="font-mono">.mbox</code>; a single message is <span className="text-ink">⋮ → Download message</span> (.eml). Outlook: drag a message to the desktop or{" "}
+              <span className="text-ink">File → Save as</span> (.eml). Drop the files in the importer above.
+            </p>
+          </div>
+          <div>
+            <div className="font-medium text-ink">Forward mail continuously</div>
+            <p className="mb-1.5">
+              Point a forwarding rule or an inbound-mail service (Cloudflare Email Workers, SendGrid Inbound Parse, Mailgun routes) at this endpoint. It accepts raw RFC 822 messages. Protect it with <code className="font-mono">EMAIL_INGEST_TOKEN</code>.
+            </p>
+            <CopyLine text={`${origin}/api/webhooks/email?token=<EMAIL_INGEST_TOKEN>&owner=u_carol&visibility=team&team=t_sales`} />
+          </div>
+          <p className="text-[11px] text-muted">Direct Gmail / Microsoft Graph sync needs an OAuth app registered with Google or Microsoft; the export and forwarding paths work without one.</p>
+        </div>
+      </Card>
+    </div>
   );
 }

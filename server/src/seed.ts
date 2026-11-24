@@ -93,6 +93,8 @@ async function seedInner(opts: { quiet?: boolean }) {
     ["src_meetings", "meeting", "Meeting recorder", "Transcripts (.txt, .vtt, .md) from Zoom/Meet recorders", { method: "upload / webhook" }],
     ["src_docs", "document", "Documents & notes", "Markdown, TXT, JSON and PDF documents", { method: "upload / CLI" }],
     ["src_traces", "agent_trace", "Agent traces", "Execution traces reported over MCP, CLI or JSON import", { method: "MCP report_agent_execution" }],
+    ["src_email", "email", "Gmail & Outlook", "Email threads from .eml / .mbox exports (Google Takeout, Outlook \"Save as\") or forwarded to the inbound webhook", { method: "export import / inbound webhook", path: "POST /api/webhooks/email" }],
+    ["src_github", "github", "GitHub", "Pushes, pull requests, reviews and comments via webhook, gh CLI JSON or repository sync", { method: "webhook / repo sync", path: "POST /api/webhooks/github" }],
   ] as const;
   for (const [id, kind, name, desc, cfg] of sources) run("INSERT INTO sources(id, kind, name, description, status, config) VALUES (?,?,?,?, 'connected', ?)", id, kind, name, desc, JSON.stringify(cfg));
 
@@ -124,6 +126,9 @@ async function seedInner(opts: { quiet?: boolean }) {
     "2026-11-10-acme-account-checkin.txt": { user: "u_carol", visibility: "team", team: "t_sales", project: "prj_alpha" },
     "2026-11-12-beacon-weekly-sync.txt": { user: "u_priya", visibility: "team", team: "t_engineering", project: "prj_beacon" },
     "ben-private-notes.md": { user: "u_ben", visibility: "private" },
+    "gmail-takeout-acme-holiday-campaign.mbox": { user: "u_carol", visibility: "team", team: "t_sales", project: "prj_alpha" },
+    "github-pr-142-payflow-retry.json": { user: "u_ben", visibility: "team", team: "t_engineering", project: "prj_alpha" },
+    "github-push-charge-service.json": { user: "u_ben", visibility: "team", team: "t_engineering", project: "prj_alpha" },
   };
   for (const [file, o] of Object.entries(plan)) {
     const p = resolvePrincipal({ userId: o.user })!;

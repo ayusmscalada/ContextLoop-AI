@@ -58,7 +58,7 @@ server.registerTool(
     inputSchema: {
       query: z.string(),
       project: z.string().optional(),
-      sources: z.array(z.enum(["chatgpt", "claude_code", "codex", "meeting", "document", "agent_trace"])).optional(),
+      sources: z.array(z.enum(["chatgpt", "claude_code", "codex", "meeting", "document", "agent_trace", "email", "github"])).optional(),
       limit: z.number().int().min(1).max(20).optional(),
     },
   },

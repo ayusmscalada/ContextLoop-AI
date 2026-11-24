@@ -1,0 +1,83 @@
+From 1817263540123456789@xxx Tue Nov 03 15:12:00 +0000 2026
+X-GM-THRID: 1817263540123456789
+X-Gmail-Labels: Inbox,Customers/Acme
+Delivered-To: carol@northwind.example
+Message-ID: <CAacme-001@mail.gmail.com>
+Date: Tue, 3 Nov 2026 15:12:00 +0000
+From: Dana Whitfield <dana@acmeretail.example>
+To: Carol Diaz <carol@northwind.example>
+Subject: Holiday campaign readiness - payment platform
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hi Carol,
+
+Our holiday campaign is the biggest week of the year for Acme Retail. Before =
+we route checkout through the new Northwind payment platform we need two thi=
+ngs from your team:
+
+1. Confirmation that the October timeout incident is fully fixed =E2=80=94 we can=
+not afford duplicate charges during peak traffic.
+2. Details on how PayFlow webhook signatures are verified, for our finance tea=
+m's audit.
+
+Thanks,
+Dana Whitfield
+Head of Digital Commerce, Acme Retail
+
+From 1817263540123456790@xxx Wed Nov 04 09:40:00 +0000 2026
+X-GM-THRID: 1817263540123456789
+X-Gmail-Labels: Sent,Customers/Acme
+Message-ID: <CAnw-002@mail.gmail.com>
+In-Reply-To: <CAacme-001@mail.gmail.com>
+References: <CAacme-001@mail.gmail.com>
+Date: Wed, 4 Nov 2026 09:40:00 +0000
+From: Carol Diaz <carol@northwind.example>
+To: Dana Whitfield <dana@acmeretail.example>
+Cc: Priya Patel <priya@northwind.example>
+Subject: Re: Holiday campaign readiness - payment platform
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+
+Hi Dana,
+
+Adding Priya Patel, who owns Project Alpha, so she can answer the technical points directly.
+
+Best,
+Carol
+
+On Tue, Nov 3, 2026 at 3:12 PM Dana Whitfield <dana@acmeretail.example> wrote:
+> Hi Carol,
+> Our holiday campaign is the biggest week of the year for Acme Retail.
+
+From 1817263540123456791@xxx Wed Nov 04 16:05:00 +0000 2026
+X-GM-THRID: 1817263540123456789
+X-Gmail-Labels: Sent,Customers/Acme
+Message-ID: <CAnw-003@mail.gmail.com>
+In-Reply-To: <CAnw-002@mail.gmail.com>
+References: <CAacme-001@mail.gmail.com> <CAnw-002@mail.gmail.com>
+Date: Wed, 4 Nov 2026 16:05:00 +0000
+From: Priya Patel <priya@northwind.example>
+To: Dana Whitfield <dana@acmeretail.example>
+Cc: Carol Diaz <carol@northwind.example>
+Subject: Re: Holiday campaign readiness - payment platform
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1_nw"
+
+--b1_nw
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: base64
+
+PGRpdj5IaSBEYW5hLDwvZGl2PjxwPkJvdGggcG9pbnRzIGFyZSBjb3ZlcmVkLiBUaGUgdGltZW91
+dCBpbmNpZGVudCB3YXMgZml4ZWQgaW4gcHVsbCByZXF1ZXN0ICMxNDI6IHRoZSBQYXlGbG93IGNs
+aWVudCBub3cgdXNlcyBhbiA4MDAgbXMgdGltZW91dCwgZXhwb25lbnRpYWwgYmFja29mZiB3aXRo
+IHJldHJ5IGxpbWl0cywgYW5kIGFuIGlkZW1wb3RlbmN5IGtleSBvbiBldmVyeSBjaGFyZ2UsIHNv
+IGEgcmV0cnkgY2FuIG5ldmVyIGNyZWF0ZSBhIGR1cGxpY2F0ZSBjaGFyZ2UuPC9wPjxwPldlYmhv
+b2sgc2lnbmF0dXJlcyBhcmUgdmVyaWZpZWQgd2l0aCBITUFDIG92ZXIgdGhlIHJhdyByZXF1ZXN0
+IGJvZHkuIFdlIGFncmVlZCB0byB3YWxrIHlvdXIgZmluYW5jZSB0ZWFtIHRocm91Z2ggaXQgaW4g
+YSB0ZWNobmljYWwgcmV2aWV3OyBDYXJvbCB3aWxsIHNlbmQgdGhlIGludml0ZS48L3A+PHA+UHJp
+eWEgUGF0ZWw8YnI+UHJvZHVjdCBNYW5hZ2VyLCBQcm9qZWN0IEFscGhhPC9wPjxibG9ja3F1b3Rl
+Pk9uIFdlZCwgTm92IDQsIENhcm9sIERpYXogd3JvdGU6IEFkZGluZyBQcml5YTwvYmxvY2txdW90
+ZT4=
+--b1_nw--

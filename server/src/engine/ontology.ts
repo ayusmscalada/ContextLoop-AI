@@ -164,6 +164,8 @@ export function ensureDefaultAuthority() {
     ["claude_code", 0.6, "Claude Code sessions (implementation detail, not decisions)"],
     ["codex", 0.6, "Codex sessions and execution logs"],
     ["agent_trace", 0.5, "Agent execution traces"],
+    ["github", 0.8, "Pull requests and commits: what actually shipped"],
+    ["email", 0.7, "Email threads (Gmail / Outlook): commitments to customers and partners"],
     ["chatgpt", 0.45, "ChatGPT conversations (exploratory)"],
   ];
   for (const [k, w, n] of defaults) run("INSERT OR IGNORE INTO source_authority(source_kind, weight, note) VALUES (?,?,?)", k, w, n);

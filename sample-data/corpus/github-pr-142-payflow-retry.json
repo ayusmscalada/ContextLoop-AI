@@ -1,0 +1,71 @@
+{
+  "number": 142,
+  "title": "Add exponential backoff, retry limits and idempotency keys to PayFlow client",
+  "url": "https://github.com/northwind-labs/charge-service/pull/142",
+  "state": "MERGED",
+  "author": {
+    "login": "bokafor",
+    "name": "Ben Okafor"
+  },
+  "createdAt": "2026-10-09T18:30:00Z",
+  "mergedAt": "2026-10-11T10:05:00Z",
+  "mergedBy": {
+    "login": "mchen",
+    "name": "Maya Chen"
+  },
+  "headRefName": "fix/payflow-timeouts",
+  "baseRefName": "main",
+  "additions": 214,
+  "deletions": 37,
+  "changedFiles": 6,
+  "labels": [
+    {
+      "name": "reliability"
+    },
+    {
+      "name": "project-alpha"
+    }
+  ],
+  "files": [
+    {
+      "path": "src/payflow/client.py"
+    },
+    {
+      "path": "src/payflow/retry.py"
+    },
+    {
+      "path": "tests/payflow/test_retry_integration.py"
+    }
+  ],
+  "body": "Fixes the Project Alpha payment integration failures from the peak-traffic rehearsal (see engineering meeting #018).\n\nRoot cause: the PayFlow API exceeded its timeout under high traffic and our client had no timeout, no retry and no idempotency key.\n\nChanges:\n- 800 ms client timeout on every PayFlow request\n- Retry transient errors (timeouts, 503, 429) up to 3 times with exponential backoff and jitter; never retry 4xx\n- Honor Retry-After on 429\n- Idempotency-Key per order, reused across retries, so a retry cannot double-charge\n\nImplemented with Claude Code (session #024); integration tests written with Codex (execution #042).",
+  "reviews": [
+    {
+      "author": {
+        "login": "mchen",
+        "name": "Maya Chen"
+      },
+      "state": "APPROVED",
+      "submittedAt": "2026-10-10T16:00:00Z",
+      "body": "Looks good. Agreed that idempotency keys are mandatory for every charge going forward; the commit-then-hang test is exactly the case we were worried about."
+    },
+    {
+      "author": {
+        "login": "amorgan",
+        "name": "Alice Morgan"
+      },
+      "state": "APPROVED",
+      "submittedAt": "2026-10-11T09:30:00Z",
+      "body": "Approved. This should become the standard for every external API call."
+    }
+  ],
+  "comments": [
+    {
+      "author": {
+        "login": "ppatel",
+        "name": "Priya Patel"
+      },
+      "createdAt": "2026-10-10T11:12:00Z",
+      "body": "Thanks Ben. I will mirror these rules in the api-integration skill so the agents follow them too."
+    }
+  ]
+}
