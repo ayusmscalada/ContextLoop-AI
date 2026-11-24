@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, Copy, FileUp, FolderSync, Terminal, UploadCloud, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Copy, FileUp, FolderSync, Loader2, Terminal, UploadCloud, X } from "lucide-react";
 import { getUserId, useApi } from "../lib/api";
 import { SOURCE_META, ago, bytes, dateTime } from "../lib/format";
 import { Badge, Button, Callout, Card, CardTitle, ErrorBox, PageHeader, Select, SourceBadge, Spinner, StatusBadge, Table, Td, cx } from "../components/ui";
@@ -20,11 +20,17 @@ export default function Sources() {
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
-    setFiles((f) => [...f, ...Array.from(list).filter((n) => !f.some((x) => x.name === n.name && x.size === n.size))]);
+    // Copy NOW: a FileList is live, and the input is reset right after this call, which empties it.
+    const picked = Array.from(list);
+    setFiles((f) => [...f, ...picked.filter((n) => !f.some((x) => x.name === n.name && x.size === n.size))]);
   };
 
   const upload = async () => {
-    if (!files.length) return;
+    if (busy) return; // an import is already running
+    if (!files.length) {
+      input.current?.click(); // nothing selected yet: open the file picker
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
@@ -149,8 +155,8 @@ export default function Sources() {
             </Field>
           </div>
           <div className="mt-4 flex items-center gap-3">
-            <Button variant="primary" icon={<UploadCloud className="size-4" />} busy={busy} disabled={!files.length} onClick={upload}>
-              Import {files.length ? `${files.length} file${files.length > 1 ? "s" : ""}` : ""}
+            <Button variant="primary" icon={busy ? <Loader2 className="size-4 animate-spin" /> : <UploadCloud className="size-4" />} onClick={upload}>
+              {busy ? "Importing…" : files.length ? `Import ${files.length} file${files.length > 1 ? "s" : ""}` : "Choose files to import"}
             </Button>
             {busy && <span className="text-xs text-muted">Storing raw → parsing → deduplicating → extracting → indexing…</span>}
           </div>
@@ -284,6 +290,11 @@ function LiveConnectors({ onSynced }: { onSynced: (results: any[]) => void }) {
   const [summary, setSummary] = useState<string | null>(null);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const sync = async () => {
+    if (busy) return;
+    if (!repo.trim()) {
+      setErr("Enter a repository first, for example owner/repo or https://github.com/owner/repo");
+      return;
+    }
     setBusy(true);
     setErr(null);
     setSummary(null);
@@ -312,7 +323,7 @@ function LiveConnectors({ onSynced }: { onSynced: (results: any[]) => void }) {
             placeholder="owner/repo or https://github.com/owner/repo"
             className="h-9 min-w-0 flex-1 rounded-lg border border-line-strong bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
           />
-          <Button variant="primary" busy={busy} disabled={!repo.trim()} onClick={sync}>Sync</Button>
+          <Button variant="primary" icon={busy ? <Loader2 className="size-4 animate-spin" /> : undefined} onClick={sync}>{busy ? "Syncing…" : "Sync"}</Button>
         </div>
         <p className="mt-1.5 text-[11px] text-muted">Public repos work without a token. Set <code className="font-mono">GITHUB_TOKEN</code> on the server for private repos and higher rate limits.</p>
         {summary && <div className="mt-2"><Callout tone="good" icon={<CheckCircle2 className="size-4 text-good-ink" />}>{summary}</Callout></div>}
