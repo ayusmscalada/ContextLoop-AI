@@ -6,9 +6,9 @@
  *    by replacing `embed()`.
  *  - fused with Reciprocal Rank Fusion, then filtered by the caller's permissions.
  */
-import { all, get, json, now, run, uid, type Row } from "../db.ts";
-import { visibleDocIds, type Principal } from "../auth.ts";
-import { complete } from "../llm.ts";
+import { all, get, json, now, run, uid, type Row } from "../db.js";
+import { visibleDocIds, type Principal } from "../auth.js";
+import { complete } from "../llm.js";
 
 const STOP = new Set("a an the and or but if of to in on at for with by from as is are was were be been being it its this that these those we our you your they their he she i me my do did does done have has had not no so than then there here what why how when where which who whom can could should would will just about into over after before also any some".split(" "));
 

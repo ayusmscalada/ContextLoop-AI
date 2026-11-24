@@ -6,7 +6,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { z } from "zod";
-import { getSetting } from "./db.ts";
+import { getSetting } from "./db.js";
 
 export const MODEL = process.env.CONTEXTLOOP_MODEL ?? "claude-opus-5-5";
 

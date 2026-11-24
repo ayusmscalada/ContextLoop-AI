@@ -1,16 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Hono, type Context } from "hono";
-import { all, get, getSetting, json, LAKE_DIR, now, ROOT, run, setSetting, type Row } from "./db.ts";
-import { audit, can, canReadDoc, Forbidden, invalidateVisibility, requirePermission, resolvePrincipal, visibleDocIds, type Principal } from "./auth.ts";
-import { ingestBuffer, listImports } from "./ingest/pipeline.ts";
-import type { SourceKind } from "./ingest/parsers.ts";
-import { answer, buildIndex, indexStats, search, threadMessages } from "./engine/search.ts";
-import { ensureDefaultAuthority, resolveConflict } from "./engine/ontology.ts";
-import { getTrace, listTraces, recordTrace, recurringFailures, repeatedWorkflows, traceOverview } from "./engine/traces.ts";
-import { decideProposal, getProposal, getSkill, listProposals, listSkills, proposeImprovement, proposeNewSkills, refineProposal, rollbackSkill, runLiveExecutions, syncSkills, syncTargets } from "./engine/skills.ts";
-import { getEvalRun, runEvaluation } from "./eval/harness.ts";
-import { lastLlmError, llmEnabled, llmStats, MODEL } from "./llm.ts";
+import { all, DATA_DIR, get, getRaw, getSetting, json, now, resetDatabase, ROOT, run, setSetting, type Row } from "./db.js";
+import { persistenceInfo } from "./persist.js";
+import { audit, can, canReadDoc, Forbidden, invalidateVisibility, requirePermission, resolvePrincipal, visibleDocIds, type Principal } from "./auth.js";
+import { ingestBuffer, listImports } from "./ingest/pipeline.js";
+import type { SourceKind } from "./ingest/parsers.js";
+import { answer, buildIndex, indexStats, search, threadMessages } from "./engine/search.js";
+import { ensureDefaultAuthority, resolveConflict } from "./engine/ontology.js";
+import { getTrace, listTraces, recordTrace, recurringFailures, repeatedWorkflows, traceOverview } from "./engine/traces.js";
+import { decideProposal, getProposal, getSkill, listProposals, listSkills, proposeImprovement, proposeNewSkills, refineProposal, rollbackSkill, runLiveExecutions, syncSkills, syncTargets } from "./engine/skills.js";
+import { getEvalRun, runEvaluation } from "./eval/harness.js";
+import { lastLlmError, llmEnabled, llmStats, MODEL } from "./llm.js";
 
 type Env = { Variables: { p: Principal } };
 const app = new Hono<Env>();
@@ -149,12 +150,11 @@ app.get("/api/documents/:id", (c) => {
   const chunks = all("SELECT id, idx, text, speaker FROM chunks WHERE doc_id = ? ORDER BY idx", d.id);
   const entities = all("SELECT DISTINCT e.id, e.type, e.name FROM mentions m JOIN entities e ON e.id = m.entity_id WHERE m.doc_id = ? ORDER BY e.type, e.name", d.id);
   let raw = "";
-  try {
-    const rp = path.join(LAKE_DIR, d.raw_path);
-    const st = fs.statSync(rp);
-    raw = fs.readFileSync(rp).subarray(0, 200_000).toString("utf8");
-    if (st.size > 200_000) raw += "\n…[raw preview truncated]";
-  } catch {}
+  const rawBuf = getRaw(d.raw_path);
+  if (rawBuf) {
+    raw = rawBuf.subarray(0, 200_000).toString("utf8");
+    if (rawBuf.length > 200_000) raw += "\n…[raw preview truncated]";
+  }
   return c.json({ ...d, metadata: json(d.metadata, {}), chunks, entities, raw, duplicate: d.duplicate_of ? { id: target.id, title: target.title } : null });
 });
 
@@ -162,8 +162,9 @@ app.get("/api/documents/:id/raw", (c) => {
   const p = P(c);
   const d = get("SELECT * FROM documents WHERE id = ?", c.req.param("id"));
   if (!d || !canReadDoc(p, d)) return c.json({ error: "Not found" }, 404);
-  const buf = fs.readFileSync(path.join(LAKE_DIR, d.raw_path));
-  return new Response(buf, { headers: { "content-type": "application/octet-stream", "content-disposition": `attachment; filename="${d.filename}"` } });
+  const buf = getRaw(d.raw_path);
+  if (!buf) return c.json({ error: "Raw object missing" }, 404);
+  return new Response(new Uint8Array(buf), { headers: { "content-type": "application/octet-stream", "content-disposition": `attachment; filename="${d.filename}"` } });
 });
 
 app.put("/api/documents/:id/visibility", async (c) => {
@@ -512,7 +513,7 @@ app.get("/api/settings", (c) => c.json({
   llm: { enabled: llmEnabled(), configured: !!(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN), model: MODEL, toggle: getSetting("llm.enabled", true), stats: llmStats, lastError: lastLlmError },
   syncTargets: getSetting("sync.targets", null) ?? syncTargets(),
   authority: all("SELECT * FROM source_authority ORDER BY weight DESC"),
-  storage: { dataDir: path.relative(ROOT, path.dirname(LAKE_DIR)) || ".", lake: path.relative(ROOT, LAKE_DIR), index: indexStats },
+  storage: { dataDir: path.relative(ROOT, DATA_DIR) || DATA_DIR, lake: "raw_objects table (content-addressed)", rawObjects: get("SELECT COUNT(*) n, COALESCE(SUM(size), 0) bytes FROM raw_objects"), persistence: persistenceInfo(), index: indexStats },
 }));
 app.put("/api/settings", async (c) => {
   const p = P(c);
@@ -526,23 +527,32 @@ app.put("/api/settings", async (c) => {
 app.post("/api/admin/reset", async (c) => {
   const p = P(c);
   requirePermission(p, "admin.manage", "demo");
-  const { seed } = await import("./seed.ts");
+  const { seed } = await import("./seed.js");
   const counts = await seed({ quiet: true });
   return c.json({ ok: true, counts });
 });
 
 // ---------------- shared bootstrap ----------------
-let prepared: Promise<void> | null = null;
+let prepared: Promise<{ seeded: boolean }> | null = null;
 /** Idempotent startup: default authority weights, demo seed on an empty database, search index. */
-export function prepare(): Promise<void> {
+export function prepare(): Promise<{ seeded: boolean }> {
   return (prepared ??= (async () => {
     ensureDefaultAuthority();
+    let seeded = false;
     if (!get("SELECT id FROM users LIMIT 1")) {
       console.log("Empty database — seeding demo organization…");
-      const { seed } = await import("./seed.ts");
-      await seed({ quiet: true });
+      const { seed } = await import("./seed.js");
+      try {
+        await seed({ quiet: true });
+      } catch (e) {
+        // Never leave (or persist) a half-seeded database: wipe it so the next request retries cleanly.
+        resetDatabase();
+        throw e;
+      }
+      seeded = true;
     }
     buildIndex();
+    return { seeded };
   })().catch((e) => { prepared = null; throw e; }));
 }
 

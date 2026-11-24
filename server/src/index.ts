@@ -3,13 +3,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { ROOT } from "./db.ts";
-import { app, indexStats, llmEnabled, MODEL, prepare } from "./app.ts";
+import { ROOT } from "./db.js";
+import { app, indexStats, llmEnabled, MODEL, prepare } from "./app.js";
 
 const PORT = Number(process.env.PORT ?? 8787);
 
 // Serve the built web UI from the same origin when it exists (npm run build).
-const dist = path.join(ROOT, "web", "dist");
+const dist = path.join(ROOT, "dist");
 if (fs.existsSync(dist)) {
   app.use("/*", serveStatic({ root: path.relative(process.cwd(), dist).replace(/\\/g, "/") }));
   app.get("*", (c) => c.html(fs.readFileSync(path.join(dist, "index.html"), "utf8")));

@@ -5,12 +5,12 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { all, get, json, LAKE_DIR, now, run, tx, uid } from "../db.ts";
-import { audit, invalidateVisibility, type Principal } from "../auth.ts";
-import { chunkSegments, parseFile, segmentsToText, type SourceKind, type TraceInput } from "./parsers.ts";
-import { extractDocument, type ExtractionStats } from "../engine/extract.ts";
-import { indexDocument } from "../engine/search.ts";
-import { recordTrace } from "../engine/traces.ts";
+import { all, get, json, now, putRaw, run, tx, uid } from "../db.js";
+import { audit, invalidateVisibility, type Principal } from "../auth.js";
+import { chunkSegments, parseFile, segmentsToText, type SourceKind, type TraceInput } from "./parsers.js";
+import { extractDocument, type ExtractionStats } from "../engine/extract.js";
+import { indexDocument } from "../engine/search.js";
+import { recordTrace } from "../engine/traces.js";
 
 export interface IngestOptions {
   filename: string;
@@ -51,14 +51,10 @@ export async function ingestBuffer(buf: Buffer, p: Principal, o: IngestOptions):
   run("INSERT INTO imports(id, filename, status, stage, started_at, user_id, origin) VALUES (?,?,?,?,?,?,?)", importId, o.filename, "processing", "storing raw", started, p.user.id, o.origin ?? "upload");
   const stage = (s: string) => run("UPDATE imports SET stage = ? WHERE id = ?", s, importId);
   try {
-    // 1. Raw first: byte-exact copy in the lake, content-addressed.
+    // 1. Raw first: byte-exact copy in the content-addressed object store (raw/<yyyy-mm>/<sha>.<ext>).
     const rawHash = sha(buf);
-    const month = started.slice(0, 7);
-    const rawDir = path.join(LAKE_DIR, "raw", month);
-    fs.mkdirSync(rawDir, { recursive: true });
-    const rawPath = path.join(rawDir, `${rawHash.slice(0, 16)}${path.extname(o.filename) || ".bin"}`);
-    if (!fs.existsSync(rawPath)) fs.writeFileSync(rawPath, buf);
-    const relRaw = path.relative(LAKE_DIR, rawPath).replace(/\\/g, "/");
+    const relRaw = `raw/${started.slice(0, 7)}/${rawHash.slice(0, 16)}${path.extname(o.filename) || ".bin"}`;
+    putRaw(relRaw, buf);
 
     stage("parsing");
     const { docs: parsed, detected } = await parseFile(buf, o.filename, o.sourceHint);

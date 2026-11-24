@@ -7,10 +7,10 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 // Overridable so bundled deployments (Vercel) can point at the files shipped next to the function.
 export const ROOT = process.env.CONTEXTLOOP_ROOT ?? path.resolve(here, "..", "..");
 export const DATA_DIR = process.env.CONTEXTLOOP_DATA_DIR ?? path.join(ROOT, "data");
-export const LAKE_DIR = path.join(DATA_DIR, "lake");
-fs.mkdirSync(LAKE_DIR, { recursive: true });
+export const DB_PATH = path.join(DATA_DIR, "contextloop.db");
+fs.mkdirSync(DATA_DIR, { recursive: true });
 
-export const db = new DatabaseSync(path.join(DATA_DIR, "contextloop.db"));
+export const db = new DatabaseSync(DB_PATH);
 db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
 
 db.exec(`
@@ -121,6 +121,9 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   meta TEXT, at TEXT
 );
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+-- Raw lake: byte-exact uploads, content-addressed. Kept inside the database so a single
+-- file holds the complete state (portable to Vercel Blob / S3 snapshots).
+CREATE TABLE IF NOT EXISTS raw_objects (key TEXT PRIMARY KEY, data BLOB NOT NULL, size INTEGER NOT NULL, created_at TEXT NOT NULL);
 `);
 
 export type Row = any; // SQLite rows are dynamically shaped
@@ -170,6 +173,13 @@ export function resetDatabase() {
   db.exec("PRAGMA foreign_keys = OFF");
   for (const t of tables) db.exec(`DELETE FROM ${t.name}`);
   db.exec("PRAGMA foreign_keys = ON");
-  fs.rmSync(LAKE_DIR, { recursive: true, force: true });
-  fs.mkdirSync(LAKE_DIR, { recursive: true });
+}
+
+export function putRaw(key: string, data: Buffer) {
+  run("INSERT OR IGNORE INTO raw_objects(key, data, size, created_at) VALUES (?,?,?,?)", key, data, data.length, now());
+}
+export function getRaw(key: string | null | undefined): Buffer | null {
+  if (!key) return null;
+  const r = get<{ data: Uint8Array }>("SELECT data FROM raw_objects WHERE key = ?", key);
+  return r ? Buffer.from(r.data) : null;
 }

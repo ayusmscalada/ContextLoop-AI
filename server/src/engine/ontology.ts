@@ -3,7 +3,7 @@
  * (deadline, owner, status, budget) are reconciled across sources: one value → current;
  * several → an open conflict with a scored, explainable proposal awaiting human review.
  */
-import { all, get, json, now, run, uid, type Row } from "../db.ts";
+import { all, get, json, now, run, uid, type Row } from "../db.js";
 
 export const ENTITY_TYPES = ["person", "project", "customer", "technology", "issue", "decision", "task", "team"] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];

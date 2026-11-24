@@ -6,7 +6,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import path from "node:path";
-import { ROOT } from "../db.ts";
+import { ROOT } from "../db.js";
 
 async function session(key: string) {
   const transport = new StdioClientTransport({

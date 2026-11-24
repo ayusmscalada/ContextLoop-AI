@@ -8,9 +8,9 @@
  *     against baseline and candidate skill versions and scores both.
  */
 import { z } from "zod";
-import { all, get, json, now, run, uid } from "../db.ts";
-import { structured } from "../llm.ts";
-import { clearRun, ensureMockApi, runState, SCENARIOS, type Scenario } from "./mockApi.ts";
+import { all, get, json, now, run, uid } from "../db.js";
+import { structured } from "../llm.js";
+import { clearRun, ensureMockApi, runState, SCENARIOS, type Scenario } from "./mockApi.js";
 
 export const Policy = z.object({
   timeoutMs: z.number().nullable().describe("Per-request client timeout in ms, or null if the skill sets none"),

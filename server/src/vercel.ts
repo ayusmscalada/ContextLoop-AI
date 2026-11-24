@@ -1,53 +1,51 @@
 /**
- * Vercel Function entry point (bundled by scripts/build-vercel.mjs into
- * .vercel/output/functions/api.func/index.mjs).
+ * Vercel entry: one serverless function handles every /api route (see api/index.ts + vercel.json).
  *
- * Vercel's filesystem is read-only except /tmp, so:
- *  - the demo database is seeded at BUILD time and shipped in ./seed-data
- *  - on a cold start it is copied to /tmp/contextloop (milliseconds), and the
- *    instance then reads/writes there for its lifetime.
- * Environment must be set before db.ts is imported, hence the dynamic import.
+ *   cold start → restore the SQLite snapshot from Vercel Blob into /tmp (or seed the demo org
+ *                on the very first boot) → build the search index
+ *   request    → Hono app → after a successful write, save the snapshot back to Blob
  */
-import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import type { IncomingMessage, ServerResponse } from "node:http";
+import { restoreSnapshot, saveSnapshot } from "./persist.js";
 
-const FN_DIR = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = (process.env.CONTEXTLOOP_DATA_DIR ??= "/tmp/contextloop");
-process.env.CONTEXTLOOP_ROOT ??= FN_DIR; // sample-data/ is bundled next to the function
-process.env.CONTEXTLOOP_SYNC_ROOT ??= DATA_DIR; // skill sync writes must land in /tmp
+// Must be set before ./db.js is imported (it opens the database at import time).
+const DATA_DIR = (process.env.CONTEXTLOOP_DATA_DIR ??= path.join(os.tmpdir(), "contextloop")); // /tmp on Vercel
+process.env.CONTEXTLOOP_SYNC_ROOT ??= DATA_DIR; // skill sync writes land in a writable dir
 
-function hydrateFromBuildSeed() {
-  if (fs.existsSync(path.join(DATA_DIR, "contextloop.db"))) return; // warm instance
-  const seedDir = path.join(FN_DIR, "seed-data");
-  if (!fs.existsSync(seedDir)) return; // no build seed → app seeds itself on first request
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.cpSync(seedDir, DATA_DIR, { recursive: true });
-}
+type App = { fetch: (req: Request) => Response | Promise<Response> };
+let ready: Promise<App> | null = null;
 
-type Listener = (req: IncomingMessage, res: ServerResponse) => Promise<void> | void;
-let ready: Promise<Listener> | null = null;
-
-async function init(): Promise<Listener> {
+async function init(): Promise<App> {
   const t0 = Date.now();
-  hydrateFromBuildSeed();
-  const { app, prepare } = await import("./app.ts");
-  await prepare();
-  const { getRequestListener } = await import("@hono/node-server");
-  console.log(`[contextloop] cold start ready in ${Date.now() - t0} ms`);
-  return getRequestListener(app.fetch);
+  const restored = await restoreSnapshot(path.join(DATA_DIR, "contextloop.db"));
+  const { app, prepare } = await import("./app.js");
+  const { seeded } = await prepare();
+  if (seeded) await saveSnapshot(); // first boot: persist the demo org so later instances start from it
+  console.log(`[contextloop] ready in ${Date.now() - t0} ms (${restored ? "restored snapshot" : seeded ? "seeded demo org" : "existing data"})`);
+  return app;
 }
 
-export default async function handler(req: IncomingMessage, res: ServerResponse) {
+const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/** Handles one /api request. vercel.json rewrites /api/<route> to /api/index?route=<route>. */
+export async function handle(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const route = url.searchParams.get("route");
+  if (route !== null) {
+    url.searchParams.delete("route");
+    url.pathname = `/api/${route.replace(/^\/+/, "")}`;
+    const hasBody = !["GET", "HEAD"].includes(request.method);
+    request = new Request(url, { method: request.method, headers: request.headers, body: hasBody ? request.body : undefined, ...(hasBody ? { duplex: "half" } : {}) } as RequestInit);
+  }
   try {
-    const listener = await (ready ??= init());
-    return await listener(req, res);
+    const app = await (ready ??= init());
+    const response = await app.fetch(request);
+    if (WRITE_METHODS.has(request.method) && response.status < 400) await saveSnapshot();
+    return response;
   } catch (e: any) {
     ready = null; // retry initialisation on the next request
-    console.error("[contextloop] init failed", e);
-    res.statusCode = 500;
-    res.setHeader("content-type", "application/json");
-    res.end(JSON.stringify({ error: `Server initialisation failed: ${e?.message ?? e}` }));
+    console.error("[contextloop] request failed", e);
+    return Response.json({ error: `Server error: ${e?.message ?? e}` }, { status: 500 });
   }
 }

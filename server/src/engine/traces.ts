@@ -2,8 +2,8 @@
  * Agent observability: trace storage, failure signatures, recurring failure
  * clustering and repeated-workflow mining (candidate new skills).
  */
-import { all, get, json, now, run, uid, type Row } from "../db.ts";
-import type { TraceInput } from "../ingest/parsers.ts";
+import { all, get, json, now, run, uid, type Row } from "../db.js";
+import type { TraceInput } from "../ingest/parsers.js";
 
 export function errorSignature(type: string | null | undefined, msg: string | null | undefined): string | null {
   if (!type && !msg) return null;

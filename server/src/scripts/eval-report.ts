@@ -11,13 +11,13 @@ import path from "node:path";
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "contextloop-eval-"));
 process.env.CONTEXTLOOP_DATA_DIR = tmp;
 
-const { ROOT, get } = await import("../db.ts");
-const { seed } = await import("../seed.ts");
-const { resolvePrincipal } = await import("../auth.ts");
-const { proposeImprovement, getProposal, refineProposal, decideProposal, runLiveExecutions } = await import("../engine/skills.ts");
-const { runEvaluation } = await import("../eval/harness.ts");
-const { skillStats } = await import("../engine/traces.ts");
-const { llmEnabled, MODEL } = await import("../llm.ts");
+const { ROOT, get } = await import("../db.js");
+const { seed } = await import("../seed.js");
+const { resolvePrincipal } = await import("../auth.js");
+const { proposeImprovement, getProposal, refineProposal, decideProposal, runLiveExecutions } = await import("../engine/skills.js");
+const { runEvaluation } = await import("../eval/harness.js");
+const { skillStats } = await import("../engine/traces.js");
+const { llmEnabled, MODEL } = await import("../llm.js");
 
 const log = (s: string) => console.log(`\x1b[36m▸\x1b[0m ${s}`);
 const pct = (v: number | null) => (v == null ? "n/a" : `${(v * 100).toFixed(0)}%`);

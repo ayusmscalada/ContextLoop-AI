@@ -1,4 +1,4 @@
-import { all, get, json, now, run, type Row } from "./db.ts";
+import { all, get, json, now, run, type Row } from "./db.js";
 
 export type Role = "admin" | "member" | "viewer";
 export type Visibility = "private" | "team" | "org";

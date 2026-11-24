@@ -1,6 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "installCommand": "npm install && npm --prefix web install",
-  "buildCommand": "npm run vercel-build"
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index?route=$1" },
+    { "source": "/((?!assets/|api/).*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/index.ts": { "maxDuration": 60, "includeFiles": "sample-data/corpus/**" }
+  }
 }

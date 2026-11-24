@@ -1,7 +1,7 @@
 /** Generates sample AI-tool exports in their native formats (run once; outputs are committed). */
 import fs from "node:fs";
 import path from "node:path";
-import { ROOT } from "../db.ts";
+import { ROOT } from "../db.js";
 
 const corpus = path.join(ROOT, "sample-data", "corpus");
 const demo = path.join(ROOT, "sample-data", "demo");

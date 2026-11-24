@@ -7,12 +7,12 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { z } from "zod";
-import { all, get, getSetting, json, now, ROOT, run, uid, type Row } from "../db.ts";
-import { structured } from "../llm.ts";
-import { recordTrace, recurringFailures, repeatedWorkflows, skillStats, type FailureCluster } from "./traces.ts";
-import { compilePolicy, executeTask, sampleScenario } from "../eval/harness.ts";
-import { search } from "./search.ts";
-import { resolvePrincipal, type Principal } from "../auth.ts";
+import { all, get, getSetting, json, now, ROOT, run, uid, type Row } from "../db.js";
+import { structured } from "../llm.js";
+import { recordTrace, recurringFailures, repeatedWorkflows, skillStats, type FailureCluster } from "./traces.js";
+import { compilePolicy, executeTask, sampleScenario } from "../eval/harness.js";
+import { search } from "./search.js";
+import { resolvePrincipal, type Principal } from "../auth.js";
 
 export function listSkills() {
   return all("SELECT s.*, u.name owner_name FROM skills s LEFT JOIN users u ON u.id = s.owner_id ORDER BY s.name").map((s) => ({

@@ -22,7 +22,7 @@ The product promise in one moment: **an agent keeps failing → the platform fin
 Requires **Node ≥ 22.13** (uses the built-in `node:sqlite`). No database, Docker or API key needed.
 
 ```bash
-npm run setup      # installs server + web deps, seeds the demo org
+npm run setup      # installs dependencies, seeds the demo org
 npm run dev        # API on :8787, web UI on http://localhost:5173
 ```
 
@@ -41,16 +41,23 @@ Optional: `export ANTHROPIC_API_KEY=…` before `npm run dev` switches extractio
 
 ### Vercel (UI + API in one project)
 
-Import the GitHub repo in Vercel and click **Deploy**. Keep the Root Directory as the repo root; [`vercel.json`](vercel.json) sets the install and build commands. Optionally add `ANTHROPIC_API_KEY` under Environment Variables.
+Same structure as a standard Vite + `api/` Vercel project:
 
-`npm run vercel-build` ([scripts/build-vercel.mjs](scripts/build-vercel.mjs)) emits a [Build Output API](https://vercel.com/docs/build-output-api/v3) bundle:
-- the web UI as static files
-- the whole API bundled into one Node function (`/api/*`), from [server/src/vercel.ts](server/src/vercel.ts)
-- a demo database **seeded at build time**, which a cold start copies to `/tmp` (~100 ms)
+| Path | Role |
+|---|---|
+| `src/`, `index.html`, `vite.config.ts` | Web UI (Vercel auto-detects **Vite**) |
+| [`api/index.ts`](api/index.ts) | One serverless function exporting `GET/POST/PUT/PATCH/DELETE` for every `/api` route |
+| [`server/src/`](server/src) | The API (Hono app, engines, eval harness) |
+| [`vercel.json`](vercel.json) | Rewrites `/api/(.*)` → `/api/index?route=$1`, SPA fallback, function settings |
 
-UI and API share one domain, so there's no CORS and nothing to configure.
+**Deploy:**
+1. Vercel → **Add New → Project** → import the repo. Leave every setting at its default (Root Directory = repo root, Framework = Vite).
+2. **Storage → Create → Blob**, then connect it to the project. This adds `BLOB_READ_WRITE_TOKEN` automatically.
+3. Redeploy. Optionally add `ANTHROPIC_API_KEY` under Environment Variables.
 
-**State on Vercel is per instance.** Changes (uploads, approvals, resolved conflicts) live as long as the warm function instance. A new instance starts from the build seed again. That suits a demo; for durable multi-user state, use the Docker/VPS deployment below or move storage to Postgres (the production path in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
+**Persistence** ([server/src/persist.ts](server/src/persist.ts)): all state (ontology, traces, skills, chat, audit, raw uploads) is one SQLite file. On a cold start the function restores the latest snapshot from Vercel Blob into `/tmp`; after every successful write it uploads the snapshot again. The very first boot seeds the demo organization and saves it. Without a Blob store the app still runs, but changes last only as long as the warm instance.
+
+Concurrent writes from several instances are last-writer-wins, which is fine for a demo. For multi-user production, move storage to Postgres (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
 
 ### Docker / VPS (persistent)
 
@@ -118,7 +125,8 @@ server/src/
   mcp.ts  cli.ts      agent-facing surfaces
   seed.ts  llm.ts     demo org · optional Claude layer
   scripts/            eval-report · mcp-smoke · gen-sample-data
-web/src/              React UI (12 pages)
+src/                  React UI (12 pages)
+api/index.ts          Vercel function entry (all /api routes)
 sample-data/          corpus (seeded) + demo (for live upload)
 docs/                 ARCHITECTURE · MCP · DEMO · EVALUATION
 ```

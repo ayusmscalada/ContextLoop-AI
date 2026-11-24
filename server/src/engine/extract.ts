@@ -4,9 +4,9 @@
  * extraction is merged on top. Every fact keeps a pointer to its evidence chunk.
  */
 import { z } from "zod";
-import { all, get, json, run, type Row } from "../db.ts";
-import { structured } from "../llm.ts";
-import { addClaim, addMention, addRelation, normKey, reconcile, upsertEntity, type EntityType } from "./ontology.ts";
+import { all, get, json, run, type Row } from "../db.js";
+import { structured } from "../llm.js";
+import { addClaim, addMention, addRelation, normKey, reconcile, upsertEntity, type EntityType } from "./ontology.js";
 
 const TECH = [
   "PostgreSQL", "Postgres", "Redis", "Kafka", "RabbitMQ", "Celery", "Python", "TypeScript", "Node.js", "React", "Next.js", "FastAPI",

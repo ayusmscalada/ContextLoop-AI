@@ -5,14 +5,14 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { all, now, ROOT, resetDatabase, run, uid } from "./db.ts";
-import { audit, invalidateProjectCache, invalidateVisibility, resolvePrincipal } from "./auth.ts";
-import { ensureDefaultAuthority, upsertEntity } from "./engine/ontology.ts";
-import { ingestBuffer } from "./ingest/pipeline.ts";
-import { createSkill, proposeImprovement, proposeNewSkills, syncSkills } from "./engine/skills.ts";
-import { recordTrace } from "./engine/traces.ts";
-import { compilePolicy, executeTask, sampleScenario } from "./eval/harness.ts";
-import { buildIndex } from "./engine/search.ts";
+import { all, now, ROOT, resetDatabase, run, uid } from "./db.js";
+import { audit, invalidateProjectCache, invalidateVisibility, resolvePrincipal } from "./auth.js";
+import { ensureDefaultAuthority, upsertEntity } from "./engine/ontology.js";
+import { ingestBuffer } from "./ingest/pipeline.js";
+import { createSkill, proposeImprovement, proposeNewSkills, syncSkills } from "./engine/skills.js";
+import { recordTrace } from "./engine/traces.js";
+import { compilePolicy, executeTask, sampleScenario } from "./eval/harness.js";
+import { buildIndex } from "./engine/search.js";
 
 const NOW = new Date("2026-11-24T09:00:00Z").getTime();
 const daysAgo = (d: number, jitterH = 20) => new Date(NOW - d * 864e5 - Math.random() * jitterH * 36e5).toISOString();

@@ -8,36 +8,49 @@
     "ctxloop": "server/bin/ctxloop.mjs"
   },
   "scripts": {
-    "dev": "concurrently -n api,web -c cyan,magenta \"npm:server\" \"npm --prefix web run dev\"",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:server\" \"vite\"",
     "server": "tsx watch server/src/index.ts",
     "start": "tsx server/src/index.ts",
+    "build": "vite build",
+    "preview": "vite preview",
     "seed": "tsx server/src/seed.ts",
     "mcp": "tsx server/src/mcp.ts",
     "cli": "tsx server/src/cli.ts",
-    "typecheck": "tsc -p server --noEmit",
-    "setup": "npm install && npm --prefix web install && npm run seed",
+    "typecheck": "tsc -p server && tsc -p .",
+    "setup": "npm install && npm run seed",
     "mcp:smoke": "tsx server/src/scripts/mcp-smoke.ts",
     "gen:samples": "tsx server/src/scripts/gen-sample-data.ts",
-    "eval:report": "tsx server/src/scripts/eval-report.ts",
-    "build": "npm --prefix web run build",
-    "vercel-build": "node scripts/build-vercel.mjs"
+    "eval:report": "tsx server/src/scripts/eval-report.ts"
   },
   "engines": {
-    "node": ">=22.13"
+    "node": "22.x"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.13.0",
     "@hono/node-server": "^2.1.11",
     "@modelcontextprotocol/sdk": "^1.32.2",
+    "@vercel/blob": "^2.9.0",
+    "cytoscape": "^3.35.0",
     "hono": "^4.13.21",
+    "lucide-react": "^1.79.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.6",
+    "recharts": "^3.11.1",
     "unpdf": "^2.2.2",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/cytoscape": "^3.21.9",
     "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
     "concurrently": "^10.0.7",
+    "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "esbuild": "^0.28.2"
+    "vite": "^8.3.8"
   }
 }
