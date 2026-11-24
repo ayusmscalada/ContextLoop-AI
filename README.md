@@ -37,6 +37,25 @@ Optional: `export ANTHROPIC_API_KEY=…` before `npm run dev` switches extractio
 | `npm run cli -- <cmd>` | CLI: `ask`, `search`, `import`, `watch`, `skills pull`, `report`, `whoami` |
 | `docker compose up` | Single-container deployment (API + built UI), data on a volume |
 
+## Deploy
+
+### Vercel (UI + API in one project)
+
+Import the GitHub repo in Vercel and click **Deploy**. Keep the Root Directory as the repo root; [`vercel.json`](vercel.json) sets the install and build commands. Optionally add `ANTHROPIC_API_KEY` under Environment Variables.
+
+`npm run vercel-build` ([scripts/build-vercel.mjs](scripts/build-vercel.mjs)) emits a [Build Output API](https://vercel.com/docs/build-output-api/v3) bundle:
+- the web UI as static files
+- the whole API bundled into one Node function (`/api/*`), from [server/src/vercel.ts](server/src/vercel.ts)
+- a demo database **seeded at build time**, which a cold start copies to `/tmp` (~100 ms)
+
+UI and API share one domain, so there's no CORS and nothing to configure.
+
+**State on Vercel is per instance.** Changes (uploads, approvals, resolved conflicts) live as long as the warm function instance. A new instance starts from the build seed again. That suits a demo; for durable multi-user state, use the Docker/VPS deployment below or move storage to Postgres (the production path in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
+
+### Docker / VPS (persistent)
+
+`docker compose up`, or `npm run build && npm start` on any machine with Node ≥ 22.13. Data persists in `data/`.
+
 ## What's in the demo
 
 A fictional software company, **Northwind Labs**, uses ChatGPT, Claude Code and Codex to build a payment platform (**Project Alpha**). The seed pushes 12 real-format files through the actual ingestion pipeline and records ~300 agent executions. The 56 `api-integration` runs are **real executions** of the v1 skill against a fault-injecting payment sandbox, so their failures are genuine and replayable.

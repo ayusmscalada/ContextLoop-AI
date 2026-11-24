@@ -280,7 +280,9 @@ export function rollbackSkill(skillId: string, version: number) {
 // ---------- sync to harnesses ----------
 export interface SyncTarget { harness: "claude-code" | "codex"; dir: string }
 export function syncTargets(): SyncTarget[] {
-  const expand = (d: string) => (d.startsWith("~") ? path.join(os.homedir(), d.slice(1)) : path.isAbsolute(d) ? d : path.join(ROOT, d));
+  // Relative targets resolve against CONTEXTLOOP_SYNC_ROOT (a writable dir on serverless hosts), else the repo root.
+  const base = process.env.CONTEXTLOOP_SYNC_ROOT ?? ROOT;
+  const expand = (d: string) => (d.startsWith("~") ? path.join(os.homedir(), d.slice(1)) : path.isAbsolute(d) ? d : path.join(base, d));
   return getSetting<SyncTarget[]>("sync.targets", [
     { harness: "claude-code", dir: "sync/claude-code/.claude/skills" },
     { harness: "codex", dir: "sync/codex/.codex/skills" },

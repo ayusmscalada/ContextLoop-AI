@@ -6,3 +6,4 @@ sync/
 *.log
 .env
 q.tmp.ts
+.vercel/

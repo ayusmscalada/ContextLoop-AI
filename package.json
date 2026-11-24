@@ -19,7 +19,8 @@
     "mcp:smoke": "tsx server/src/scripts/mcp-smoke.ts",
     "gen:samples": "tsx server/src/scripts/gen-sample-data.ts",
     "eval:report": "tsx server/src/scripts/eval-report.ts",
-    "build": "npm --prefix web run build"
+    "build": "npm --prefix web run build",
+    "vercel-build": "node scripts/build-vercel.mjs"
   },
   "engines": {
     "node": ">=22.13"
@@ -36,6 +37,7 @@
     "@types/node": "^26.6.6",
     "concurrently": "^10.0.7",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "esbuild": "^0.28.2"
   }
 }
