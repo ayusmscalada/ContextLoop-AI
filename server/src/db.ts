@@ -10,10 +10,27 @@ export const DATA_DIR = process.env.CONTEXTLOOP_DATA_DIR ?? path.join(ROOT, "dat
 export const DB_PATH = path.join(DATA_DIR, "contextloop.db");
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
-export const db = new DatabaseSync(DB_PATH);
-db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
+function openDatabase(): DatabaseSync {
+  const d = new DatabaseSync(DB_PATH);
+  d.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
+  d.exec(SCHEMA);
+  return d;
+}
 
-db.exec(`
+/** Close the connection (before the file is replaced by a newer snapshot). Safe to call twice. */
+export function closeDatabase() {
+  try {
+    db.close();
+  } catch {}
+}
+
+/** (Re)open the database file, e.g. after a newer snapshot was restored over it. */
+export function reopenDatabase() {
+  closeDatabase();
+  db = openDatabase();
+}
+
+const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, role TEXT NOT NULL,
   title TEXT, color TEXT
@@ -124,7 +141,10 @@ CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
 -- Raw lake: byte-exact uploads, content-addressed. Kept inside the database so a single
 -- file holds the complete state (portable to Vercel Blob / S3 snapshots).
 CREATE TABLE IF NOT EXISTS raw_objects (key TEXT PRIMARY KEY, data BLOB NOT NULL, size INTEGER NOT NULL, created_at TEXT NOT NULL);
-`);
+`;
+
+/** Live binding: reopenDatabase() swaps it, and every importer sees the new handle. */
+export let db: DatabaseSync = openDatabase();
 
 export type Row = any; // SQLite rows are dynamically shaped
 

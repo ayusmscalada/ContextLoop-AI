@@ -68,7 +68,15 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-white/10 px-4 py-3 text-[11px] text-white/45">
+        <div className="space-y-1 border-t border-white/10 px-4 py-3 text-[11px] text-white/45">
+          {me?.persistence && (me.persistence.backend !== "off" || me.persistence.onVercel) && (
+            <div className={cx("flex items-center gap-1.5", me.persistence.backend === "off" || me.persistence.lastError ? "text-[#fab219]" : "")} title={me.persistence.lastError ?? `Snapshot ${me.persistence.key}`}>
+              <Database className="size-3" />
+              {me.persistence.backend === "vercel-blob"
+                ? me.persistence.lastError ? "Vercel Blob: error (see Settings)" : `Saved to Vercel Blob${me.persistence.lastSavedAt ? "" : " (connected)"}`
+                : me.persistence.backend === "local-dir" ? "Snapshots: local folder" : "Not persisted: no Blob token"}
+            </div>
+          )}
           {me?.llm?.enabled ? (
             <span className="inline-flex items-center gap-1.5"><Cpu className="size-3" /> Claude · {me.llm.model}</span>
           ) : (

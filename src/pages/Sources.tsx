@@ -37,6 +37,7 @@ export default function Sources() {
       const res = await fetch("/api/import", { method: "POST", headers: { "x-user-id": getUserId() }, body: fd });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? `Upload failed (${res.status})`);
+      if (!Array.isArray(body.results)) throw new Error(`Unexpected response from the server (${res.status}). The files were not imported.`);
       setResults(body.results);
       setFiles([]);
       reload();
@@ -53,6 +54,8 @@ export default function Sources() {
         title="Data sources"
         subtitle="Cross-provider capture: raw data first, no lossy summarization. Every file is stored byte-exact in the lake, then parsed, deduplicated, chunked, and mined for knowledge."
       />
+
+      <PersistenceWarning />
 
       {/* Connectors */}
       {loading && !data ? <Spinner /> : <ErrorBox error={error} />}
@@ -342,4 +345,34 @@ function LiveConnectors({ onSynced }: { onSynced: (results: any[]) => void }) {
       </Card>
     </div>
   );
+}
+
+/** On Vercel, data only survives across instances when a Blob store is connected. Say so plainly. */
+function PersistenceWarning() {
+  const { data: me } = useApi<any>("/me");
+  const p = me?.persistence;
+  if (!p) return null;
+  if (p.onVercel && p.backend === "off") {
+    return (
+      <div className="mb-5">
+        <Callout tone="warning" icon={<AlertTriangle className="size-4 text-warning-ink" />}>
+          <div className="font-medium">Imports are not being saved: this deployment has no Vercel Blob token.</div>
+          <div className="mt-0.5 text-ink-2">
+            Vercel adds <code className="font-mono">BLOB_READ_WRITE_TOKEN</code> when a Blob store is connected, but only to <b>new</b> deployments. Connect the store (Storage → your Blob store → Connect Project), then redeploy.
+          </div>
+        </Callout>
+      </div>
+    );
+  }
+  if (p.lastError) {
+    return (
+      <div className="mb-5">
+        <Callout tone="critical" icon={<AlertTriangle className="size-4 text-critical" />}>
+          <div className="font-medium">Saving to storage failed</div>
+          <div className="mt-0.5 font-mono text-xs text-ink-2">{p.lastError}</div>
+        </Callout>
+      </div>
+    );
+  }
+  return null;
 }

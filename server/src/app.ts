@@ -56,7 +56,7 @@ app.get("/api/health", (c) => c.json({ ok: true, at: now() }));
 app.get("/api/me", (c) => {
   const p = P(c);
   const users = all("SELECT u.*, (SELECT group_concat(t.name, ', ') FROM team_members tm JOIN teams t ON t.id = tm.team_id WHERE tm.user_id = u.id) teams FROM users u ORDER BY u.role, u.name");
-  return c.json({ principal: p, users, llm: { enabled: llmEnabled(), model: MODEL } });
+  return c.json({ principal: p, users, llm: { enabled: llmEnabled(), model: MODEL }, persistence: persistenceInfo() });
 });
 
 // ---------------- overview ----------------
